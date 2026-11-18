@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the site and publish it to the folder Caddy serves for commandes.tsumo.dev.
+# Build the site and publish it to the folder Caddy serves for commandes.tusmo.dev.
 # On the VPS:  git pull && ./deploy.sh      (another folder: TARGET=/path ./deploy.sh)
 set -euo pipefail
 cd "$(dirname "$0")"
