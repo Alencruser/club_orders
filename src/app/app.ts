@@ -1,5 +1,6 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { FeedbackDialogComponent } from './shared/feedback-dialog';
 import { ApiService } from './core/api.service';
 import { CartService } from './core/cart.service';
 import { DataService } from './core/data.service';
@@ -16,7 +17,7 @@ const LOGIN_ERRORS: Record<string, string> = {
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FeedbackDialogComponent],
   template: `
     <header class="topbar">
       <a routerLink="/" class="brand">
@@ -48,6 +49,9 @@ const LOGIN_ERRORS: Record<string, string> = {
           </a>
         </nav>
         <div class="user">
+          <button type="button" class="btn ghost" (click)="feedbackOpen.set(true)">
+            💡 Suggestion / bug
+          </button>
           @if (session.me()?.user?.avatar; as avatar) {
             <img [src]="avatar" alt="" />
           }
@@ -102,6 +106,10 @@ const LOGIN_ERRORS: Record<string, string> = {
       }
     </main>
 
+    @if (feedbackOpen()) {
+      <app-feedback-dialog (closed)="feedbackOpen.set(false)" />
+    }
+
     <div class="toasts" aria-live="polite">
       @for (t of toast.toasts(); track t.id) {
         <button type="button" class="toast {{ t.kind }}" (click)="toast.dismiss(t.id)">
@@ -118,6 +126,7 @@ export class App {
   protected data = inject(DataService);
   protected toast = inject(ToastService);
   protected api = inject(ApiService);
+  readonly feedbackOpen = signal(false);
 
   // ?login=… after a refused Discord login (set by the bot)
   readonly loginError = computed(

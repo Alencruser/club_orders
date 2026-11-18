@@ -567,6 +567,10 @@ input[type='checkbox'] {
   margin-top: 0.8rem;
   padding-top: 0.7rem;
   border-top: 1px solid var(--border-soft);
+  // Commander takes the rest of the row, or the whole next row on a narrow card
+  .btn.gold {
+    flex: 1 1 auto;
+  }
 }
 .stepper {
   display: inline-flex;
@@ -784,6 +788,67 @@ input[type='checkbox'] {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
   &.error {
     border-color: var(--red);
+  }
+}
+
+// --- Suggestion / bug window, and the /feedback page ---
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+}
+.dialog {
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  textarea {
+    font: inherit;
+    color: var(--text);
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+    padding: 0.5rem;
+    resize: vertical;
+    &:focus {
+      outline: none;
+      border-color: var(--gold-dim);
+    }
+  }
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.feedback {
+  margin-bottom: 0.7rem;
+  &.closed {
+    opacity: 0.6;
+  }
+}
+.feedback-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+.feedback-text {
+  white-space: pre-wrap;
+  margin: 0.6rem 0 0;
+}
+.kind {
+  font-weight: 700;
+  &.bug {
+    color: var(--red);
+  }
+  &.suggestion {
+    color: var(--gold);
   }
 }
 

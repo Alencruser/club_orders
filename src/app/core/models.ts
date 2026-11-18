@@ -104,3 +104,15 @@ export interface Order {
   reply?: string;
   archived?: boolean; // kept only in this browser: the bot forgot it (30 days)
 }
+
+// Suggestion or bug sent from the site (read on the hidden /feedback page)
+export interface FeedbackItem {
+  id: string;
+  createdAt: number; // ms
+  type: 'suggestion' | 'bug';
+  text: string;
+  page: string;
+  userId: string;
+  name: string;
+  status: 'new' | 'done';
+}

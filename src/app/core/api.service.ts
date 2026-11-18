@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Artisan, Catalog, Me, Order, Tooltip } from './models';
+import { Artisan, Catalog, FeedbackItem, Me, Order, Tooltip } from './models';
 
 // Calls to the bot (same address as the site, /api forwarded by Caddy). The session is a cookie.
 @Injectable({ providedIn: 'root' })
@@ -55,6 +55,23 @@ export class ApiService {
 
   async setNote(text: string) {
     return (await this.post<{ note: string | null }>('/api/note', { text })).note;
+  }
+
+  sendFeedback(type: 'suggestion' | 'bug', text: string, page: string) {
+    return this.post('/api/feedback', { type, text, page });
+  }
+
+  // Only for BOT_ADMINS accounts: anyone else gets a 404
+  async feedbackList() {
+    return (await this.get<{ items: FeedbackItem[] }>('/api/feedback')).items;
+  }
+
+  async feedbackStatus(id: string, status: 'new' | 'done') {
+    return (await this.post<{ item: FeedbackItem }>(`/api/feedback/${id}/status`, { status })).item;
+  }
+
+  feedbackDelete(id: string) {
+    return this.post(`/api/feedback/${id}/delete`, {});
   }
 
   logout() {
