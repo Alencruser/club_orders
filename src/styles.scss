@@ -585,6 +585,14 @@ input[type='checkbox'] {
     text-align: center;
     border: none;
     border-radius: 0;
+    // the card has its own − and + buttons: no native arrows (Firefox, then Chrome / Edge / Safari)
+    appearance: textfield;
+    -moz-appearance: textfield;
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
   }
 }
 
