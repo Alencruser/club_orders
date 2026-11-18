@@ -101,7 +101,14 @@ import { DotComponent, IconComponent, MaterialsComponent, classColor } from './u
                 +
               </button>
             </div>
-            <button type="button" class="btn" (click)="addToCart()">🛒 Panier</button>
+            <button
+              type="button"
+              class="btn"
+              title="Garde l’objet dans ton panier : tu passes toutes les commandes du panier d’un coup"
+              (click)="addToCart()"
+            >
+              🛒 Ajouter au panier
+            </button>
             <button type="button" class="btn gold" [disabled]="busy()" (click)="orderNow()">
               Commander
             </button>
