@@ -5,22 +5,46 @@ import { Order } from './models';
 import { SessionService } from './session.service';
 import { readStore, writeStore } from './storage';
 
-// For a page showing orders (call from its constructor): loads them once logged in, then every minute
-// while the page is open and the tab visible; loads the catalog too (names, materials).
+const FALLBACK_MS = 5 * 60_000;
+
+// Called once by the app (constructor): loads orders and catalog once logged in, then keeps them live.
+// The bot signals every change on /api/events (an order placed, done, cancelled… from the site, Discord
+// or the game; an artisan's professions or note): the orders or the artisans are asked again at once.
+// The browser reconnects by itself if the stream drops; a check every 5 minutes and on coming back to
+// the tab covers what a dropped stream may have missed.
 export function refreshOrders(session: SessionService, orders: OrdersService, data: DataService) {
+  let stream: EventSource | null = null;
+  const refresh = () => {
+    const id = session.userId();
+    if (id) orders.refresh(id);
+  };
   effect(() => {
     const id = session.userId();
+    stream?.close();
+    stream = null;
     if (!id) return;
     untracked(() => {
       orders.refresh(id);
       if (!data.catalog() && !data.loading()) data.load();
     });
+    if (typeof EventSource === 'function') {
+      stream = new EventSource('/api/events');
+      stream.addEventListener('orders', refresh);
+      stream.addEventListener('artisans', () => data.refreshArtisans().catch(() => {}));
+    }
   });
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') refresh();
+  };
+  document.addEventListener('visibilitychange', onVisible);
   const timer = setInterval(() => {
-    const id = session.userId();
-    if (id && document.visibilityState === 'visible') orders.refresh(id);
-  }, 60_000);
-  inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    if (document.visibilityState === 'visible') refresh();
+  }, FALLBACK_MS);
+  inject(DestroyRef).onDestroy(() => {
+    stream?.close();
+    clearInterval(timer);
+    document.removeEventListener('visibilitychange', onVisible);
+  });
 }
 
 const HISTORY_MAX = 300;
