@@ -47,6 +47,8 @@ const LOGIN_ERRORS: Record<string, string> = {
               <span class="badge">{{ orders.receivedPending().length }}</span>
             }
           </a>
+          <a routerLink="/banque" routerLinkActive="active">Banque</a>
+          <a routerLink="/suivi" routerLinkActive="active">Suivi</a>
         </nav>
         <div class="user">
           <button type="button" class="btn ghost" (click)="feedbackOpen.set(true)">

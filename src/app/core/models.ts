@@ -116,3 +116,80 @@ export interface FeedbackItem {
   name: string;
   status: 'new' | 'done';
 }
+
+// Guild bank (bot: bank.js, /api/bank). Amounts in copper, dates in seconds.
+export interface BankTx {
+  at: number;
+  copper: number;
+  name: string;
+}
+export interface BankMember {
+  id: string;
+  userId: string | null;
+  linked: boolean;
+  name: string;
+  avatar?: string | null;
+  net: number;
+  dep: number;
+  wd: number;
+  deposits: number;
+  withdrawals: number;
+  maxDep: BankTx | null;
+  maxWd: BankTx | null;
+  minDep: BankTx | null;
+  streak: number;
+  bestStreak: number;
+  characters: string[];
+}
+export interface BankSummary {
+  guildName: string | null;
+  goal: number;
+  money: number | null;
+  moneyAt: number | null;
+  since: number | null;
+  last: { at: number; name: string } | null;
+  monthName: string;
+  members: BankMember[];
+  records: {
+    deposit: (BankTx & { character: string }) | null;
+    withdraw: (BankTx & { character: string }) | null;
+  };
+  patron: BankMember | null;
+  rat: BankMember | null;
+  war: { out: number; in: number; count: number };
+  neverGave: { userId: string; name: string | null; avatar?: string | null }[];
+  days: { day: string; dep: number; wd: number }[];
+  recent: {
+    id: number;
+    at: number;
+    type: 'deposit' | 'withdraw';
+    copper: number;
+    character: string;
+    name: string;
+    guild: boolean;
+  }[];
+}
+
+// Follow time (bot: follow.js, /api/follow). Durations in seconds.
+export interface FollowMember {
+  id: string;
+  userId: string | null;
+  linked: boolean;
+  name: string;
+  avatar?: string | null;
+  seconds: number;
+  week: number;
+  sessions: number;
+  targets: {
+    name: string;
+    userId: string | null;
+    member: string | null;
+    seconds: number;
+    count: number;
+  }[];
+  characters: { name: string; seconds: number }[];
+}
+export interface FollowSummary {
+  total: number;
+  members: FollowMember[];
+}

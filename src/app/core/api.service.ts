@@ -1,7 +1,16 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Artisan, Catalog, FeedbackItem, Me, Order, Tooltip } from './models';
+import {
+  Artisan,
+  BankSummary,
+  Catalog,
+  FeedbackItem,
+  FollowSummary,
+  Me,
+  Order,
+  Tooltip,
+} from './models';
 
 // Calls to the bot (same address as the site, /api forwarded by Caddy). The session is a cookie.
 @Injectable({ providedIn: 'root' })
@@ -76,6 +85,14 @@ export class ApiService {
 
   logout() {
     return this.post('/api/auth/logout', {});
+  }
+
+  bank() {
+    return this.get<BankSummary>('/api/bank');
+  }
+
+  follow() {
+    return this.get<FollowSummary>('/api/follow');
   }
 
   loginUrl(back = location.pathname) {
