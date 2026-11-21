@@ -29,12 +29,7 @@ body {
 }
 
 body {
-  background:
-    radial-gradient(ellipse at 50% -10%, rgba(80, 60, 20, 0.35), transparent 60%),
-    radial-gradient(ellipse at 100% 100%, rgba(30, 40, 90, 0.35), transparent 55%),
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.012) 0 2px, transparent 2px 6px),
-    var(--bg);
-  background-attachment: fixed;
+  background: var(--bg);
   color: var(--text);
   font:
     16px/1.45 'Alegreya Sans',
@@ -1350,4 +1345,20 @@ input[type='checkbox'] {
 .dialog textarea,
 .dialog select {
   width: 100%;
+}
+
+// --- Background: « Trésor de guilde » ---
+// A fixed layer behind the page (works on phones too, unlike background-attachment: fixed). cover keeps
+// the image's ratio at every window size: it is cropped on the sides or at the top and bottom, never
+// stretched. A dark veil keeps the texts outside the panels readable.
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(7, 8, 13, 0.45), rgba(7, 8, 13, 0.6)),
+    url('/tresor-de-guilde.webp') center / cover no-repeat,
+    var(--bg);
+  pointer-events: none;
 }
