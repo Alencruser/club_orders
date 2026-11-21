@@ -2414,3 +2414,11 @@ $heat: linear-gradient(90deg, #5a1404, #c43d0a 50%, #ff8a2a 85%, #ffe08a);
     filter: brightness(1.2);
   }
 }
+
+// Bank page: ranking, last 30 days and latest transactions stacked on the left, the small cards on the right
+.bank-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 0;
+}

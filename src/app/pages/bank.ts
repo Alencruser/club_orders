@@ -100,124 +100,162 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
       }
 
       <div class="bank-grid">
-        <section class="tooltip">
-          <div class="section-head">
-            <h2>Classement <app-share [card]="'ranking:' + ranking()" /></h2>
-            <div class="tabs small-tabs">
-              @for (r of rankings; track r.key) {
-                <button
-                  type="button"
-                  [class.active]="ranking() === r.key"
-                  (click)="ranking.set(r.key)"
-                >
-                  {{ r.label }}
-                </button>
+        <div class="bank-main">
+          <section class="tooltip">
+            <div class="section-head">
+              <h2>Classement <app-share [card]="'ranking:' + ranking()" /></h2>
+              <div class="tabs small-tabs">
+                @for (r of rankings; track r.key) {
+                  <button
+                    type="button"
+                    [class.active]="ranking() === r.key"
+                    (click)="ranking.set(r.key)"
+                  >
+                    {{ r.label }}
+                  </button>
+                }
+              </div>
+            </div>
+            <ol class="ranking">
+              @for (m of ranked(); track m.id; let i = $index) {
+                <li [class.open]="open() === m.id" [class.unlinked]="!m.linked">
+                  <button type="button" class="rank-row" (click)="toggle(m.id)">
+                    <span class="medal m{{ i }}"
+                      >{{ i + 1 }}
+                      @if (ranking() === 'net' && m.move) {
+                        <i class="move" [class.down]="m.move < 0"
+                          >{{ m.move > 0 ? '▲' : '▼' }}{{ m.move > 0 ? m.move : -m.move }}</i
+                        >
+                      }
+                    </span>
+                    <app-avatar [src]="m.avatar" [name]="m.name" />
+                    <span class="rank-name">
+                      {{ m.name }}
+                      @if (m.title) {
+                        <span class="rank-title">{{ m.title }}</span>
+                      }
+                      @if (!m.linked) {
+                        <span class="muted small">sans battletag</span>
+                      }
+                    </span>
+                    <span class="rank-gauge"
+                      ><span [style.width.%]="gauge(m)" [class.neg]="(value(m) ?? 0) < 0"></span
+                    ></span>
+                    <span class="rank-value">
+                      @switch (ranking()) {
+                        @case ('streak') {
+                          {{ m.streak }} j
+                          <span class="muted small">(record {{ m.bestStreak }})</span>
+                        }
+                        @case ('deposits') {
+                          {{ m.deposits }} dépôt{{ m.deposits > 1 ? 's' : '' }}
+                        }
+                        @case ('season') {
+                          <app-money [copper]="m.seasonNet" [sign]="true" />
+                        }
+                        @case ('dep') {
+                          <app-money [copper]="m.dep" />
+                        }
+                        @case ('maxDep') {
+                          <app-money [copper]="m.maxDep?.copper ?? 0" />
+                        }
+                        @case ('maxWd') {
+                          <app-money [copper]="m.maxWd?.copper ?? 0" />
+                        }
+                        @case ('minDep') {
+                          <app-money [copper]="m.minDep?.copper ?? 0" />
+                        }
+                        @default {
+                          <app-money [copper]="m.net" [sign]="true" />
+                        }
+                      }
+                    </span>
+                  </button>
+                  @if (open() === m.id) {
+                    <div class="rank-detail">
+                      <div class="detail-share"><app-share [card]="'player:' + m.id" /></div>
+                      <div>
+                        <span class="muted">Déposé</span> <app-money [copper]="m.dep" />
+                        <span class="muted small">({{ m.deposits }})</span>
+                      </div>
+                      <div>
+                        <span class="muted">Retiré</span> <app-money [copper]="m.wd" />
+                        <span class="muted small">({{ m.withdrawals }})</span>
+                      </div>
+                      <div>
+                        <span class="muted">Solde net</span>
+                        <app-money [copper]="m.net" [sign]="true" />
+                      </div>
+                      <div>
+                        <span class="muted">Plus gros dépôt</span>
+                        @if (m.maxDep) {
+                          <app-money [copper]="m.maxDep.copper" />
+                          <span class="muted small">{{ date(m.maxDep.at) }}</span>
+                        } @else {
+                          —
+                        }
+                      </div>
+                      <div>
+                        <span class="muted">Plus gros retrait</span>
+                        @if (m.maxWd) {
+                          <app-money [copper]="m.maxWd.copper" />
+                          <span class="muted small">{{ date(m.maxWd.at) }}</span>
+                        } @else {
+                          —
+                        }
+                      </div>
+                      <div>
+                        <span class="muted">Série de dépôts</span> {{ m.streak }} j
+                        <span class="muted small">(record {{ m.bestStreak }} j)</span>
+                      </div>
+                      <div class="chars">
+                        <span class="muted">Persos</span> {{ m.characters.join(', ') }}
+                      </div>
+                    </div>
+                  }
+                </li>
+              } @empty {
+                <li class="muted">Personne pour l’instant.</li>
+              }
+            </ol>
+          </section>
+          <section class="tooltip">
+            <h2>30 derniers jours</h2>
+            <div class="days">
+              @for (day of d.days; track day.day) {
+                <div class="day" [attr.title]="dayTitle(day)">
+                  <span class="day-dep" [style.height.%]="dayHeight(day.dep)"></span>
+                  <span class="day-wd" [style.height.%]="dayHeight(day.wd)"></span>
+                </div>
               }
             </div>
-          </div>
-          <ol class="ranking">
-            @for (m of ranked(); track m.id; let i = $index) {
-              <li [class.open]="open() === m.id" [class.unlinked]="!m.linked">
-                <button type="button" class="rank-row" (click)="toggle(m.id)">
-                  <span class="medal m{{ i }}"
-                    >{{ i + 1 }}
-                    @if (ranking() === 'net' && m.move) {
-                      <i class="move" [class.down]="m.move < 0"
-                        >{{ m.move > 0 ? '▲' : '▼' }}{{ m.move > 0 ? m.move : -m.move }}</i
-                      >
-                    }
-                  </span>
-                  <app-avatar [src]="m.avatar" [name]="m.name" />
-                  <span class="rank-name">
-                    {{ m.name }}
-                    @if (m.title) {
-                      <span class="rank-title">{{ m.title }}</span>
-                    }
-                    @if (!m.linked) {
-                      <span class="muted small">sans battletag</span>
-                    }
-                  </span>
-                  <span class="rank-gauge"
-                    ><span [style.width.%]="gauge(m)" [class.neg]="(value(m) ?? 0) < 0"></span
-                  ></span>
-                  <span class="rank-value">
-                    @switch (ranking()) {
-                      @case ('streak') {
-                        {{ m.streak }} j
-                        <span class="muted small">(record {{ m.bestStreak }})</span>
-                      }
-                      @case ('deposits') {
-                        {{ m.deposits }} dépôt{{ m.deposits > 1 ? 's' : '' }}
-                      }
-                      @case ('season') {
-                        <app-money [copper]="m.seasonNet" [sign]="true" />
-                      }
-                      @case ('dep') {
-                        <app-money [copper]="m.dep" />
-                      }
-                      @case ('maxDep') {
-                        <app-money [copper]="m.maxDep?.copper ?? 0" />
-                      }
-                      @case ('maxWd') {
-                        <app-money [copper]="m.maxWd?.copper ?? 0" />
-                      }
-                      @case ('minDep') {
-                        <app-money [copper]="m.minDep?.copper ?? 0" />
-                      }
-                      @default {
-                        <app-money [copper]="m.net" [sign]="true" />
-                      }
-                    }
-                  </span>
-                </button>
-                @if (open() === m.id) {
-                  <div class="rank-detail">
-                    <div class="detail-share"><app-share [card]="'player:' + m.id" /></div>
-                    <div>
-                      <span class="muted">Déposé</span> <app-money [copper]="m.dep" />
-                      <span class="muted small">({{ m.deposits }})</span>
-                    </div>
-                    <div>
-                      <span class="muted">Retiré</span> <app-money [copper]="m.wd" />
-                      <span class="muted small">({{ m.withdrawals }})</span>
-                    </div>
-                    <div>
-                      <span class="muted">Solde net</span>
-                      <app-money [copper]="m.net" [sign]="true" />
-                    </div>
-                    <div>
-                      <span class="muted">Plus gros dépôt</span>
-                      @if (m.maxDep) {
-                        <app-money [copper]="m.maxDep.copper" />
-                        <span class="muted small">{{ date(m.maxDep.at) }}</span>
-                      } @else {
-                        —
-                      }
-                    </div>
-                    <div>
-                      <span class="muted">Plus gros retrait</span>
-                      @if (m.maxWd) {
-                        <app-money [copper]="m.maxWd.copper" />
-                        <span class="muted small">{{ date(m.maxWd.at) }}</span>
-                      } @else {
-                        —
-                      }
-                    </div>
-                    <div>
-                      <span class="muted">Série de dépôts</span> {{ m.streak }} j
-                      <span class="muted small">(record {{ m.bestStreak }} j)</span>
-                    </div>
-                    <div class="chars">
-                      <span class="muted">Persos</span> {{ m.characters.join(', ') }}
-                    </div>
-                  </div>
-                }
-              </li>
-            } @empty {
-              <li class="muted">Personne pour l’instant.</li>
-            }
-          </ol>
-        </section>
+            <p class="muted small">
+              <span class="key dep"></span> dépôts <span class="key wd"></span> retraits
+            </p>
+          </section>
+          <section class="tooltip">
+            <h2>Dernières transactions</h2>
+            <ul class="tx-list">
+              @for (t of d.recent.slice(0, 15); track t.id) {
+                <li [class.war]="t.guild">
+                  <span
+                    class="tx-arrow"
+                    [class.dep]="t.type === 'deposit'"
+                    [class.wd]="t.type !== 'deposit'"
+                    >{{ t.guild ? '🛡️' : t.type === 'deposit' ? '▲' : '▼' }}</span
+                  >
+                  <span class="grow"
+                    >{{ t.name }} <span class="muted small">{{ t.character }}</span></span
+                  >
+                  <app-money [copper]="t.type === 'deposit' ? t.copper : -t.copper" [sign]="true" />
+                  <span class="muted small">{{ dateTime(t.at) }}</span>
+                </li>
+              } @empty {
+                <li class="muted">Aucune transaction.</li>
+              }
+            </ul>
+          </section>
+        </div>
 
         <aside class="bank-side">
           <div class="tooltip highlight patron">
@@ -300,45 +338,6 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
             }
           </div>
         </aside>
-      </div>
-
-      <div class="bank-grid">
-        <section class="tooltip">
-          <h2>30 derniers jours</h2>
-          <div class="days">
-            @for (day of d.days; track day.day) {
-              <div class="day" [attr.title]="dayTitle(day)">
-                <span class="day-dep" [style.height.%]="dayHeight(day.dep)"></span>
-                <span class="day-wd" [style.height.%]="dayHeight(day.wd)"></span>
-              </div>
-            }
-          </div>
-          <p class="muted small">
-            <span class="key dep"></span> dépôts <span class="key wd"></span> retraits
-          </p>
-        </section>
-        <section class="tooltip">
-          <h2>Dernières transactions</h2>
-          <ul class="tx-list">
-            @for (t of d.recent.slice(0, 15); track t.id) {
-              <li [class.war]="t.guild">
-                <span
-                  class="tx-arrow"
-                  [class.dep]="t.type === 'deposit'"
-                  [class.wd]="t.type !== 'deposit'"
-                  >{{ t.guild ? '🛡️' : t.type === 'deposit' ? '▲' : '▼' }}</span
-                >
-                <span class="grow"
-                  >{{ t.name }} <span class="muted small">{{ t.character }}</span></span
-                >
-                <app-money [copper]="t.type === 'deposit' ? t.copper : -t.copper" [sign]="true" />
-                <span class="muted small">{{ dateTime(t.at) }}</span>
-              </li>
-            } @empty {
-              <li class="muted">Aucune transaction.</li>
-            }
-          </ul>
-        </section>
       </div>
     } @else if (!error()) {
       <p class="center muted">Ouverture du coffre…</p>
