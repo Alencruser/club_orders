@@ -988,6 +988,7 @@ input[type='checkbox'] {
       transparent 70%
     );
     transform: translateX(-100%);
+    will-change: transform;
     animation: goal-shine 3.5s ease-in-out 1.5s infinite;
   }
 }
@@ -1408,9 +1409,7 @@ $rivet: radial-gradient(circle, #d8cfc2 0 1.5px, #6a625a 2.5px, #262220 4.5px, t
       $rivet top 7px right 7px / 12px 12px no-repeat,
       $rivet bottom 7px left 7px / 12px 12px no-repeat,
       $rivet bottom 7px right 7px / 12px 12px no-repeat,
-      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.05) 0 2px, transparent 3px) 0 0 /
-        22px 19px,
-      radial-gradient(circle at 70% 60%, rgba(0, 0, 0, 0.16) 0 3px, transparent 4px) 0 0 / 27px 23px,
+      url('/forge-hammered.webp') 0 0 / 88px 76px repeat,
       radial-gradient(ellipse at 15% 0%, rgba(255, 255, 255, 0.08), transparent 50%),
       linear-gradient(160deg, var(--panel-top), #2c2926 55%, var(--panel-bottom));
     box-shadow:
@@ -1796,16 +1795,12 @@ $frame-wood: linear-gradient(135deg, #9a6630, #4a2a12 35%, #8a5428 55%, #3a200c)
     .cards > *:nth-child(4) {
       animation-delay: 0.18s;
     }
-    .medal.m0 {
-      animation: first-glow 2.4s ease-in-out infinite alternate;
+    .medal.m0::after {
+      animation: glow-pulse 2.4s ease-in-out infinite alternate;
     }
   }
   .theme-museum .goal-fill {
     animation: rope-run 1.6s linear infinite;
-  }
-  .theme-forge .tabs button.active,
-  .theme-forge .prof.active {
-    animation: heat 1.8s ease-in-out infinite alternate;
   }
 }
 @keyframes panel-in {
@@ -1814,21 +1809,36 @@ $frame-wood: linear-gradient(135deg, #9a6630, #4a2a12 35%, #8a5428 55%, #3a200c)
     transform: translateY(12px) scale(0.985);
   }
 }
-@keyframes first-glow {
-  to {
-    box-shadow:
-      inset 0 -2px 3px rgba(0, 0, 0, 0.45),
-      0 0 18px rgba(255, 209, 0, 0.9);
+// Glows pulse through the opacity of a pseudo-element: the graphics card handles it, nothing is
+// repainted (animating box-shadow or filter repainted the zone 60 times per second and made scrolling lag)
+@keyframes glow-pulse {
+  from {
+    opacity: 0.25;
   }
+  to {
+    opacity: 1;
+  }
+}
+.medal.m0::after,
+.trophy:not(.locked).r-legendary .trophy-icon::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  box-shadow: 0 0 16px rgba(255, 209, 0, 0.9);
+  opacity: 0.6;
+  pointer-events: none;
+  will-change: opacity;
+}
+.trophy:not(.locked).r-legendary .trophy-icon::after {
+  box-shadow: 0 0 18px rgba(255, 128, 0, 0.85);
+}
+.trophy-icon {
+  position: relative;
 }
 @keyframes rope-run {
   to {
     background-position: 19.8px 0;
-  }
-}
-@keyframes heat {
-  to {
-    box-shadow: 0 0 16px rgba(255, 110, 30, 0.6);
   }
 }
 
@@ -2031,8 +2041,8 @@ $frame-wood: linear-gradient(135deg, #9a6630, #4a2a12 35%, #8a5428 55%, #3a200c)
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .trophy:not(.locked).r-legendary .trophy-icon {
-    animation: first-glow 2.4s ease-in-out infinite alternate;
+  .trophy:not(.locked).r-legendary .trophy-icon::after {
+    animation: glow-pulse 2.4s ease-in-out infinite alternate;
   }
 }
 
@@ -2402,16 +2412,6 @@ $heat: linear-gradient(90deg, #5a1404, #c43d0a 50%, #ff8a2a 85%, #ffe08a);
   .ranking li:hover {
     background: rgba(255, 140, 40, 0.07);
     box-shadow: inset 3px 0 0 #ff8a2a;
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .theme-forge .goal-fill {
-    animation: forge-glow 2.6s ease-in-out infinite alternate;
-  }
-}
-@keyframes forge-glow {
-  to {
-    filter: brightness(1.2);
   }
 }
 
