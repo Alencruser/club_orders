@@ -108,6 +108,9 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
                   <app-avatar [src]="m.avatar" [name]="m.name" />
                   <span class="rank-name">
                     {{ m.name }}
+                    @if (m.title) {
+                      <span class="rank-title">{{ m.title }}</span>
+                    }
                     @if (!m.linked) {
                       <span class="muted small">sans battletag</span>
                     }

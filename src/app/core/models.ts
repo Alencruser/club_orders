@@ -129,6 +129,7 @@ export interface BankMember {
   userId: string | null;
   linked: boolean;
   name: string;
+  title?: string | null;
   avatar?: string | null;
   net: number;
   dep: number;
@@ -177,6 +178,7 @@ export interface FollowMember {
   userId: string | null;
   linked: boolean;
   name: string;
+  title?: string | null;
   avatar?: string | null;
   seconds: number;
   week: number;
@@ -193,4 +195,40 @@ export interface FollowMember {
 export interface FollowSummary {
   total: number;
   members: FollowMember[];
+}
+
+// Titles and achievements (bot: gamification.js, titles.js, /api/achievements)
+export interface Title {
+  id: string;
+  name: string;
+  min: number;
+}
+export interface TitleProgress {
+  current: Title | null;
+  next: Title | null;
+  value: number;
+}
+export interface AchievementDef {
+  id: string;
+  cat: 'bank' | 'follow' | 'craft';
+  name: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  desc: string;
+}
+export interface AchievementsSummary {
+  definitions: AchievementDef[];
+  titles: { bank: Title[]; follow: Title[] };
+  players: {
+    userId: string;
+    name: string;
+    avatar?: string | null;
+    titles: { bank: TitleProgress; follow: TitleProgress };
+    achievements: {
+      id: string;
+      value: number;
+      target: number;
+      done: boolean;
+      unlockedAt: number | null;
+    }[];
+  }[];
 }

@@ -1831,3 +1831,207 @@ $frame-wood: linear-gradient(135deg, #9a6630, #4a2a12 35%, #8a5428 55%, #3a200c)
     box-shadow: 0 0 16px rgba(255, 110, 30, 0.6);
   }
 }
+
+// --- Titles and trophies (pages/trophies.ts, titles in the rankings) ---
+.rank-title {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+.trophy-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+.trophy-players {
+  position: sticky;
+  top: 4.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  h4 {
+    margin-top: 0;
+  }
+}
+.trophy-player {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  &:hover {
+    background: rgba(255, 211, 107, 0.07);
+  }
+  &.active {
+    border-color: var(--gold-dim);
+    background: rgba(255, 211, 107, 0.12);
+  }
+}
+.trophy-count {
+  font-weight: 700;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+.trophy-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.showcase-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  h2 {
+    margin: 0;
+  }
+}
+.title-plaques {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+.title-plaque {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 190px;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(239, 212, 138, 0.16), rgba(0, 0, 0, 0.25));
+  border: 1px solid rgba(233, 196, 106, 0.4);
+  h4 {
+    margin: 0;
+  }
+  strong {
+    color: var(--gold);
+    font-size: 1.05rem;
+  }
+}
+.title-bar {
+  display: block;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: repeating-linear-gradient(-45deg, #e9c46a 0 5px, #b48a3c 5px 10px);
+  }
+}
+.trophy-cat {
+  margin: 0.8rem 0 0.2rem;
+}
+.trophy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.7rem;
+}
+.trophy {
+  --rarity: #ffffff;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem 0.8rem;
+  border-radius: 12px;
+  background:
+    radial-gradient(
+      ellipse at 20% 0%,
+      color-mix(in srgb, var(--rarity) 18%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(180deg, rgba(40, 14, 8, 0.92), rgba(18, 6, 4, 0.95));
+  border: 2px solid color-mix(in srgb, var(--rarity) 70%, #3a200c);
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.5),
+    0 0 14px color-mix(in srgb, var(--rarity) 25%, transparent);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 10px 18px rgba(0, 0, 0, 0.55),
+      0 0 20px color-mix(in srgb, var(--rarity) 40%, transparent);
+  }
+  &.r-rare {
+    --rarity: #0070dd;
+  }
+  &.r-epic {
+    --rarity: #a335ee;
+  }
+  &.r-legendary {
+    --rarity: #ff8000;
+  }
+  &.locked {
+    filter: grayscale(0.9);
+    opacity: 0.55;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+  }
+}
+.trophy-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  background: radial-gradient(circle at 35% 30%, #5a3a1a, #1e0f04);
+  box-shadow:
+    inset 0 0 0 2px var(--rarity),
+    0 0 10px color-mix(in srgb, var(--rarity) 45%, transparent);
+}
+.trophy-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  strong {
+    color: var(--rarity);
+    font-size: 1.02rem;
+  }
+}
+.trophy.r-common .trophy-text strong {
+  color: var(--text);
+}
+.trophy-rarity {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--rarity) 80%, #fff);
+}
+.trophy-date {
+  color: var(--gold-dim);
+}
+@media (max-width: 900px) {
+  .trophy-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .trophy-players {
+    position: static;
+    max-height: 260px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .trophy:not(.locked).r-legendary .trophy-icon {
+    animation: first-glow 2.4s ease-in-out infinite alternate;
+  }
+}

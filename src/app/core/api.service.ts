@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
+  AchievementsSummary,
   Artisan,
   BankSummary,
   Catalog,
@@ -93,6 +94,10 @@ export class ApiService {
 
   follow() {
     return this.get<FollowSummary>('/api/follow');
+  }
+
+  achievements() {
+    return this.get<AchievementsSummary>('/api/achievements');
   }
 
   // Bot admins only (404 for anyone else)
