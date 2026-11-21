@@ -76,7 +76,6 @@ const LOGIN_ERRORS: Record<string, string> = {
           @if (session.me()?.user?.avatar; as avatar) {
             <img [src]="avatar" alt="" [title]="session.me()?.user?.name ?? ''" />
           }
-          <span class="user-label">{{ session.me()?.user?.name }}</span>
           <button
             type="button"
             class="icon-btn logout"
