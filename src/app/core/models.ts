@@ -5,6 +5,7 @@ export interface Me {
   guild: { id: string; name: string; icon: string | null };
   characters: Character[];
   note: string | null;
+  admin?: boolean; // bot admin: may share the guild cards on Discord
 }
 
 export interface Character {

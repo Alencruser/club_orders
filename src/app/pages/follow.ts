@@ -2,12 +2,13 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ApiService, errorText } from '../core/api.service';
 import { FollowMember, FollowSummary } from '../core/models';
 import { AvatarComponent, duration, liveRefresh } from '../shared/guild-ui';
+import { ShareButtonComponent } from '../shared/share-button';
 
 // Follow time: who follows the most (all time or the last 7 days), and for each player everyone they
 // followed, for how long and how many times. Read only, live from the bot.
 @Component({
   selector: 'app-follow',
-  imports: [AvatarComponent],
+  imports: [AvatarComponent, ShareButtonComponent],
   template: `
     <div class="page-head">
       <div>
@@ -47,7 +48,7 @@ import { AvatarComponent, duration, liveRefresh } from '../shared/guild-ui';
       </section>
 
       <section class="tooltip">
-        <h2>Qui suit le plus</h2>
+        <h2>Qui suit le plus <app-share [card]="'follow:' + period()" /></h2>
         <ol class="ranking">
           @for (m of ranked(); track m.id; let i = $index) {
             <li [class.open]="open() === m.id" [class.unlinked]="!m.linked">
@@ -72,6 +73,7 @@ import { AvatarComponent, duration, liveRefresh } from '../shared/guild-ui';
               </button>
               @if (open() === m.id) {
                 <div class="rank-detail follow-detail">
+                  <div class="detail-share"><app-share [card]="'followPlayer:' + m.id" /></div>
                   <h4>Derrière qui (depuis le début)</h4>
                   @for (t of m.targets; track t.name) {
                     <div class="target">

@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ApiService, errorText } from '../core/api.service';
 import { BankMember, BankSummary } from '../core/models';
+import { ShareButtonComponent } from '../shared/share-button';
 import {
   AvatarComponent,
   MoneyComponent,
@@ -26,7 +27,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
 // the month, who never gave, deposits per day, latest transactions. Read only, live from the bot.
 @Component({
   selector: 'app-bank',
-  imports: [MoneyComponent, AvatarComponent],
+  imports: [MoneyComponent, AvatarComponent, ShareButtonComponent],
   template: `
     <div class="page-head">
       <div>
@@ -55,7 +56,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
         <section class="tooltip goal">
           <div class="goal-head">
             <div>
-              <h2>Objectif : onglet de banque</h2>
+              <h2>Objectif : onglet de banque <app-share card="goal" /></h2>
               <p class="muted small">
                 @if (left() > 0) {
                   Encore <app-money [copper]="left()" /> pour atteindre
@@ -86,7 +87,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
       <div class="bank-grid">
         <section class="tooltip">
           <div class="section-head">
-            <h2>Classement</h2>
+            <h2>Classement <app-share [card]="'ranking:' + ranking()" /></h2>
             <div class="tabs small-tabs">
               @for (r of rankings; track r.key) {
                 <button
@@ -143,6 +144,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
                 </button>
                 @if (open() === m.id) {
                   <div class="rank-detail">
+                    <div class="detail-share"><app-share [card]="'player:' + m.id" /></div>
                     <div>
                       <span class="muted">Déposé</span> <app-money [copper]="m.dep" />
                       <span class="muted small">({{ m.deposits }})</span>
@@ -192,6 +194,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
         <aside class="bank-side">
           <div class="tooltip highlight patron">
             <h4>👑 Mécène · {{ d.monthName }}</h4>
+            <div class="card-share"><app-share card="patron" /></div>
             @if (d.patron; as p) {
               <div class="highlight-who">
                 <app-avatar [src]="p.avatar" [name]="p.name" [size]="36" /> {{ p.name }}
@@ -203,6 +206,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
           </div>
           <div class="tooltip highlight rat">
             <h4>🐀 Rat de banque</h4>
+            <div class="card-share"><app-share card="rat" /></div>
             @if (d.rat; as r) {
               <div class="highlight-who">
                 <app-avatar [src]="r.avatar" [name]="r.name" [size]="36" /> {{ r.name }}
@@ -214,7 +218,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
             }
           </div>
           <div class="tooltip">
-            <h4>🏆 Records</h4>
+            <h4>🏆 Records <app-share card="records" /></h4>
             <div class="record">
               <span class="muted">Plus gros dépôt</span>
               @if (d.records.deposit; as r) {
@@ -252,7 +256,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
             }
           </div>
           <div class="tooltip">
-            <h4>🙈 Jamais donné ({{ d.neverGave.length }})</h4>
+            <h4>🙈 Jamais donné ({{ d.neverGave.length }}) <app-share card="never" /></h4>
             @if (d.neverGave.length) {
               <div class="never">
                 @for (p of d.neverGave; track p.userId) {

@@ -95,6 +95,19 @@ export class ApiService {
     return this.get<FollowSummary>('/api/follow');
   }
 
+  // Bot admins only (404 for anyone else)
+  async shareChannels() {
+    return (
+      await this.get<{ channels: { id: string; name: string; parent: string | null }[] }>(
+        '/api/share/channels',
+      )
+    ).channels;
+  }
+
+  share(card: string, channelId: string, text: string) {
+    return this.post<{ url: string }>('/api/share', { card, channelId, text });
+  }
+
   loginUrl(back = location.pathname) {
     return `/api/auth/login?back=${encodeURIComponent(back)}`;
   }
