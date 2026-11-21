@@ -2711,6 +2711,19 @@ h1.page-banner,
   &:active {
     transform: translateY(2px);
   }
+  &.feedback-link {
+    position: relative;
+    text-decoration: none;
+    border-color: #8c6a2a;
+    &.active {
+      box-shadow: 0 0 0 2px #f0c46e;
+    }
+    .badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+    }
+  }
   &.logout {
     color: #ff4b4b;
     border-color: #8c3a20;

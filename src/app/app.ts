@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FeedbackDialogComponent } from './shared/feedback-dialog';
 import { ApiService } from './core/api.service';
@@ -69,6 +69,20 @@ const LOGIN_ERRORS: Record<string, string> = {
           >
             💡
           </button>
+          @if (session.me()?.feedbackAdmin) {
+            <a
+              routerLink="/feedback"
+              routerLinkActive="active"
+              class="icon-btn feedback-link"
+              title="Suggestions et bugs reçus (visible seulement par vous deux)"
+              aria-label="Suggestions et bugs reçus"
+            >
+              📋
+              @if (feedbackNew()) {
+                <span class="badge">{{ feedbackNew() }}</span>
+              }
+            </a>
+          }
           @if (session.me()?.user?.avatar; as avatar) {
             <img [src]="avatar" alt="" [title]="session.me()?.user?.name ?? ''" />
           }
@@ -160,6 +174,8 @@ export class App {
   protected toast = inject(ToastService);
   protected api = inject(ApiService);
   readonly feedbackOpen = signal(false);
+  // FEEDBACK_ADMINS only: count of the suggestions and bugs still « À voir »
+  readonly feedbackNew = signal(0);
 
   // ?login=… after a refused Discord login (set by the bot)
   readonly loginError = computed(
@@ -177,9 +193,23 @@ export class App {
     this.router.events.subscribe((e) => {
       if (e instanceof NavigationEnd) {
         this.theme.set(this.themeOf(e.urlAfterRedirects));
+        this.countFeedback();
       }
+    });
+    effect(() => {
+      if (this.session.me()?.feedbackAdmin) this.countFeedback();
     });
     this.session.load();
     refreshOrders(this.session, this.orders, this.data);
+  }
+
+  private async countFeedback() {
+    if (!this.session.me()?.feedbackAdmin) return;
+    try {
+      const list = await this.api.feedbackList();
+      this.feedbackNew.set(list.filter((f) => f.status === 'new').length);
+    } catch {
+      this.feedbackNew.set(0);
+    }
   }
 }
