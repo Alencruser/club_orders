@@ -2301,3 +2301,11 @@ $frame-wood: linear-gradient(135deg, #9a6630, #4a2a12 35%, #8a5428 55%, #3a200c)
   text-transform: uppercase;
   color: var(--gold-dim);
 }
+.goal-left {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  .money {
+    font-weight: 600;
+  }
+}
