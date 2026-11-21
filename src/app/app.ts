@@ -17,15 +17,62 @@ const LOGIN_ERRORS: Record<string, string> = {
 
 @Component({
   selector: 'app-root',
+  host: { '(document:keydown.escape)': 'menuOpen.set(false)' },
   imports: [RouterOutlet, RouterLink, RouterLinkActive, FeedbackDialogComponent],
   template: `
     <header class="topbar">
+      @if (session.status() === 'in') {
+        <button
+          type="button"
+          class="burger"
+          aria-label="Ouvrir le menu"
+          [attr.aria-expanded]="menuOpen()"
+          (click)="menuOpen.set(true)"
+        >
+          <span></span><span></span><span></span>
+          @if (alerts()) {
+            <span class="badge">{{ alerts() }}</span>
+          }
+        </button>
+      }
       <a routerLink="/" class="brand">
         <img src="https://wow.zamimg.com/images/wow/icons/medium/inv_hammer_20.jpg" alt="" />
         <span><strong>Bagarre club</strong> <span class="muted">· Commandes</span></span>
       </a>
       @if (session.status() === 'in') {
-        <nav class="nav nav-images">
+        <div class="user">
+          <button type="button" class="btn ghost" (click)="feedbackOpen.set(true)">
+            💡 Suggestion / bug
+          </button>
+          @if (session.me()?.user?.avatar; as avatar) {
+            <img [src]="avatar" alt="" />
+          }
+          <span>{{ session.me()?.user?.name }}</span>
+          <button type="button" class="btn ghost" (click)="session.logout()">Déconnexion</button>
+        </div>
+      }
+    </header>
+
+    @if (session.status() === 'in') {
+      <div class="drawer-backdrop" [class.open]="menuOpen()" (click)="menuOpen.set(false)"></div>
+      <aside
+        class="drawer"
+        [class.open]="menuOpen()"
+        aria-label="Menu"
+        [attr.inert]="menuOpen() ? null : ''"
+      >
+        <div class="drawer-head">
+          <strong>Menu</strong>
+          <button
+            type="button"
+            class="btn ghost"
+            aria-label="Fermer le menu"
+            (click)="menuOpen.set(false)"
+          >
+            ✕
+          </button>
+        </div>
+        <nav class="nav-drawer" (click)="menuOpen.set(false)">
           <a
             routerLink="/"
             routerLinkActive="active"
@@ -64,18 +111,8 @@ const LOGIN_ERRORS: Record<string, string> = {
             <img src="/nav/defis.webp" alt="Défis" />
           </a>
         </nav>
-        <div class="user">
-          <button type="button" class="btn ghost" (click)="feedbackOpen.set(true)">
-            💡 Suggestion / bug
-          </button>
-          @if (session.me()?.user?.avatar; as avatar) {
-            <img [src]="avatar" alt="" />
-          }
-          <span>{{ session.me()?.user?.name }}</span>
-          <button type="button" class="btn ghost" (click)="session.logout()">Déconnexion</button>
-        </div>
-      }
-    </header>
+      </aside>
+    }
 
     <main [class]="'theme-' + theme()">
       @switch (session.status()) {
@@ -143,6 +180,9 @@ export class App {
   protected toast = inject(ToastService);
   protected api = inject(ApiService);
   readonly feedbackOpen = signal(false);
+  // side menu (hamburger): the pages as picture banners, one under the other
+  readonly menuOpen = signal(false);
+  readonly alerts = computed(() => this.cart.count() + this.orders.receivedPending().length);
 
   // ?login=… after a refused Discord login (set by the bot)
   readonly loginError = computed(
@@ -158,7 +198,10 @@ export class App {
   constructor() {
     this.theme.set(this.themeOf(location.pathname));
     this.router.events.subscribe((e) => {
-      if (e instanceof NavigationEnd) this.theme.set(this.themeOf(e.urlAfterRedirects));
+      if (e instanceof NavigationEnd) {
+        this.theme.set(this.themeOf(e.urlAfterRedirects));
+        this.menuOpen.set(false);
+      }
     });
     this.session.load();
     refreshOrders(this.session, this.orders, this.data);
