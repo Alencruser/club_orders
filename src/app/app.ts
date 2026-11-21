@@ -64,14 +64,37 @@ const LOGIN_ERRORS: Record<string, string> = {
           </a>
         </nav>
         <div class="user">
-          <button type="button" class="btn ghost" (click)="feedbackOpen.set(true)">
-            💡 <span class="user-label">Suggestion / bug</span>
+          <button
+            type="button"
+            class="icon-btn"
+            title="Une idée ou un problème ? Envoie une suggestion ou signale un bug à l’équipe du site"
+            aria-label="Suggestion ou bug"
+            (click)="feedbackOpen.set(true)"
+          >
+            💡
           </button>
           @if (session.me()?.user?.avatar; as avatar) {
-            <img [src]="avatar" alt="" />
+            <img [src]="avatar" alt="" [title]="session.me()?.user?.name ?? ''" />
           }
           <span class="user-label">{{ session.me()?.user?.name }}</span>
-          <button type="button" class="btn ghost" (click)="session.logout()">Déconnexion</button>
+          <button
+            type="button"
+            class="icon-btn logout"
+            title="Se déconnecter du site"
+            aria-label="Déconnexion"
+            (click)="session.logout()"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path
+                d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M15 16l4-4-4-4M19 12H9"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
         </div>
       }
     </header>

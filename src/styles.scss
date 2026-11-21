@@ -2669,3 +2669,63 @@ h1.page-banner,
     display: none;
   }
 }
+
+// Top bar: banners right after the icon; the account block reduced to icons (titles explain them)
+.topbar {
+  gap: 0.6rem;
+}
+.topbar .nav-images {
+  justify-content: flex-start;
+}
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid #57514b;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #3a3532, #24211f);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform 0.1s ease,
+    filter 0.15s ease;
+  &:hover {
+    filter: brightness(1.2);
+  }
+  &:active {
+    transform: translateY(2px);
+  }
+  &.logout {
+    color: #ff4b4b;
+    border-color: #8c3a20;
+    background: linear-gradient(180deg, #4a1c10, #2a0f08);
+    &:hover {
+      color: #ff7a7a;
+    }
+  }
+}
+// the banners follow the screen width, so icon + banners + account stay on one row
+@media (min-width: 901px) {
+  .topbar {
+    flex-wrap: nowrap;
+  }
+  .topbar .nav-images {
+    flex-wrap: nowrap;
+    min-width: 0;
+    gap: 0.4rem;
+    img {
+      height: clamp(24px, 2.35vw, 38px);
+    }
+    .nav-text {
+      padding: clamp(0.2rem, 0.4vw, 0.35rem) clamp(0.5rem, 0.9vw, 0.9rem);
+      font-size: clamp(0.8rem, 1.05vw, 1rem);
+      white-space: nowrap;
+    }
+  }
+  .topbar .user {
+    flex: none;
+  }
+}
