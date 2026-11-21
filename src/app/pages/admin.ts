@@ -349,6 +349,13 @@ const AUTO_REFRESH_MS = 60 * 1000;
           <p class="admin-ok">✅ Rien à signaler</p>
         }
       }
+    } @else if (error(); as e) {
+      <section class="tooltip center">
+        <p>❌ Le bot n'a pas pu lire le tableau de bord : {{ e }}</p>
+        <button type="button" class="btn gold" [disabled]="loading()" (click)="load()">
+          🔄 Réessayer
+        </button>
+      </section>
     } @else {
       <p class="center muted">Chargement…</p>
     }
@@ -361,6 +368,7 @@ export class AdminPage {
 
   readonly state = signal<AdminState | null>(null);
   readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
   readonly tab = signal<Tab>(this.tabFromHash());
   readonly channels = signal<AdminChannel[]>([]);
   readonly picks = signal<Record<string, string>>({}); // slot key → chosen channel (not saved yet)
@@ -417,7 +425,9 @@ export class AdminPage {
     this.loading.set(true);
     try {
       this.state.set(await this.api.adminState());
+      this.error.set(null);
     } catch (err) {
+      this.error.set(errorText(err));
       if (err instanceof HttpErrorResponse && err.status === 404) {
         this.router.navigate([''], { replaceUrl: true });
       } else if (!quiet) this.toast.error(`❌ ${errorText(err)}`);
