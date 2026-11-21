@@ -13,9 +13,11 @@ import {
   AdminVersions,
 } from '../core/models';
 import { ToastService } from '../core/toast.service';
+import { AdminDataComponent } from './admin-data';
+import { AdminToolsComponent } from './admin-tools';
 
-type Tab = 'status' | 'channels' | 'anomalies' | 'versions';
-const TABS: Tab[] = ['status', 'channels', 'anomalies', 'versions'];
+type Tab = 'status' | 'channels' | 'anomalies' | 'versions' | 'data' | 'tools';
+const TABS: Tab[] = ['status', 'channels', 'anomalies', 'versions', 'data', 'tools'];
 const SEVERITY = { red: '🔴', orange: '🟠', benign: '⚪' } as const;
 const AUTO_REFRESH_MS = 60 * 1000;
 
@@ -24,7 +26,7 @@ const AUTO_REFRESH_MS = 60 * 1000;
 // sent back home. Step 1: status, channels, anomalies (data and tools come next).
 @Component({
   selector: 'app-admin',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, AdminDataComponent, AdminToolsComponent],
   template: `
     @if (state(); as s) {
       <div class="page-head">
@@ -56,8 +58,8 @@ const AUTO_REFRESH_MS = 60 * 1000;
               <span class="badge dim">{{ behind().length }}</span>
             }
           </button>
-          <button type="button" disabled title="Bientôt : prochaine étape">🗂️ Données</button>
-          <button type="button" disabled title="Bientôt : prochaine étape">🛠️ Outils</button>
+          <button type="button" [class.active]="tab() === 'data'" (click)="go('data')">🗂️ Données</button>
+          <button type="button" [class.active]="tab() === 'tools'" (click)="go('tools')">🛠️ Outils</button>
         </div>
         <button type="button" class="btn ghost" [disabled]="loading()" (click)="load()">
           🔄 {{ loading() ? 'Lecture…' : 'Actualiser' }}
@@ -363,6 +365,13 @@ const AUTO_REFRESH_MS = 60 * 1000;
         }
       }
 
+      @if (tab() === 'data') {
+        <app-admin-data [orphans]="orphanCount()" (changed)="load(true)" />
+      }
+      @if (tab() === 'tools') {
+        <app-admin-tools (changed)="load(true)" />
+      }
+
       <!-- 📦 Versions -->
       @if (tab() === 'versions') {
         @if (versions(); as v) {
@@ -482,6 +491,9 @@ export class AdminPage {
 
   readonly editableSlots = computed(() => (this.state()?.slots ?? []).filter((s) => !s.readOnly));
   readonly readOnlySlots = computed(() => (this.state()?.slots ?? []).filter((s) => s.readOnly));
+  readonly orphanCount = computed(
+    () => (this.state()?.anomalies.items ?? []).filter((a) => a.kind === 'orphan').length,
+  );
   readonly slotProblems = computed(() => this.editableSlots().filter((s) => s.problem).length);
   readonly channelGroups = computed(() => {
     const groups = new Map<string, AdminChannel[]>();

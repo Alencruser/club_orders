@@ -445,6 +445,50 @@ export interface AdminVersions {
   members: AdminVersionMember[];
 }
 
+// 🗂️ Données tab (bot: admin-data.js DATASETS)
+export interface AdminDataset {
+  key: string;
+  emoji: string;
+  label: string;
+  unit: string;
+  count: number;
+  listable: boolean;
+  items: { id: string; line: string }[] | null;
+  consequences: string | null;
+  cascadeLabel: string | null;
+  cascadeConsequences: string | null;
+}
+
+// 🛠️ Outils tab. Dates: recipes.importedAt in seconds, releases in ms.
+export interface AdminTools {
+  filters: { guild: string | null; realm: string | null };
+  board: { hidden: number[]; onePerPlayer: boolean; perPage: number; minLevel: Record<string, number> };
+  blocks: { key: string; title: string; skills: { skill: number; name: string }[] }[];
+  perPageChoices: number[];
+  recipes: { build: string; importedAt: number | null; recipes: number; items: number } | null;
+  wowhead: { cached: number; total: number; warming: boolean } | null;
+  importing: boolean;
+  releases: {
+    channelId: string | null;
+    mention: string;
+    mentions: Record<string, string>;
+    last: { title: string; at: number } | null;
+    pending: { title: string; missing: string[]; since: number | null; stale: boolean }[];
+    waitingBaseline?: boolean;
+    error?: string | null;
+  };
+  battletagChannelId: string | null;
+}
+
+export interface AdminReleaseEntry {
+  key: string;
+  title: string;
+  body: string;
+  ready: boolean;
+  missing: string[];
+  announced: boolean;
+}
+
 export interface AdminChannel {
   id: string;
   name: string;

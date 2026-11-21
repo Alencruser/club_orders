@@ -3372,3 +3372,78 @@ $da-frame-shadow:
     box-shadow: 0 0 0 2px #f0c46e;
   }
 }
+
+// --- Admin: 🗂️ Données and 🛠️ Outils (pages/admin-data.ts, admin-tools.ts) ---
+.admin-lists {
+  margin-top: 1.2rem;
+}
+.admin-list-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+  input[type='search'] {
+    flex: 1;
+    min-width: 12rem;
+  }
+}
+.admin-list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0.6rem 0;
+}
+.admin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 34rem;
+  overflow-y: auto;
+  li {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(240, 196, 110, 0.12);
+  }
+  label {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+}
+.admin-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 0.8rem;
+  fieldset {
+    border: 1px solid rgba(240, 196, 110, 0.3);
+    border-radius: 8px;
+    padding: 0.5rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  legend {
+    color: var(--gold);
+    font-weight: 700;
+  }
+  input[type='number'] {
+    width: 6rem;
+  }
+}
+.admin-release {
+  border-top: 1px solid rgba(240, 196, 110, 0.15);
+  padding: 0.5rem 0;
+}
+.admin-release-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.admin-card .admin-actions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}

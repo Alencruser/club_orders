@@ -4,7 +4,10 @@ import { firstValueFrom } from 'rxjs';
 import {
   AchievementsSummary,
   AdminChannel,
+  AdminDataset,
+  AdminReleaseEntry,
   AdminState,
+  AdminTools,
   AdminVersions,
   Artisan,
   Challenge,
@@ -135,6 +138,44 @@ export class ApiService {
 
   async bankLineFlags(id: number, flags: { guild?: boolean; ignored?: boolean }) {
     return (await this.post<{ line: BankLine }>(`/api/bank/lines/${id}`, flags)).line;
+  }
+
+  async adminData(user: string | null = null) {
+    const q = user ? `?user=${encodeURIComponent(user)}` : '';
+    return (await this.get<{ datasets: AdminDataset[] }>(`/api/admin/data${q}`)).datasets;
+  }
+
+  adminRemove(key: string, ids: string[], cascade: boolean) {
+    return this.post<{ removed: number }>('/api/admin/data/remove', { key, ids, cascade });
+  }
+
+  adminCleanOrphans() {
+    return this.post<{ removed: number }>('/api/admin/orphans/clean', {});
+  }
+
+  // userId null: everyone
+  adminReset(what: 'levels' | 'ranking', userId: string | null) {
+    return this.post<{ text: string }>('/api/admin/reset', { what, userId });
+  }
+
+  adminTools() {
+    return this.get<AdminTools>('/api/admin/tools');
+  }
+
+  adminTool<T = { ok: boolean }>(name: 'filters' | 'board' | 'recipes' | 'wowhead' | 'test' | 'redraw' | 'purge', body: unknown = {}) {
+    return this.post<T>(`/api/admin/tools/${name}`, body);
+  }
+
+  async adminReleases() {
+    return (await this.get<{ entries: AdminReleaseEntry[] }>('/api/admin/releases')).entries;
+  }
+
+  adminPublishRelease(key: string) {
+    return this.post<{ title: string; channel: string | null }>('/api/admin/releases/publish', { key });
+  }
+
+  adminSetMention(mention: string) {
+    return this.post<{ mention: string }>('/api/admin/releases/mention', { mention });
   }
 
   adminVersions() {
