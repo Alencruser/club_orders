@@ -2729,3 +2729,11 @@ h1.page-banner,
     flex: none;
   }
 }
+// banners spread over the free width (large screens), packed when space runs out (small screens)
+@media (min-width: 901px) {
+  .topbar .nav-images {
+    flex: 1 1 auto;
+    justify-content: space-between;
+    gap: 0.3rem;
+  }
+}
