@@ -38,7 +38,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
       </div>
       @if (data(); as d) {
         @if (d.last) {
-          <p class="muted small">
+          <p class="small cartel">
             Dernière lecture le {{ dateTime(d.last.at) }} par {{ d.last.name }}
             @if (d.since) {
               · suivi depuis le {{ date(d.since) }}

@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FeedbackDialogComponent } from './shared/feedback-dialog';
 import { ApiService } from './core/api.service';
 import { CartService } from './core/cart.service';
@@ -63,7 +63,7 @@ const LOGIN_ERRORS: Record<string, string> = {
       }
     </header>
 
-    <main>
+    <main [class]="'theme-' + theme()">
       @switch (session.status()) {
         @case ('loading') {
           <p class="center muted">Chargement…</p>
@@ -135,7 +135,17 @@ export class App {
     () => LOGIN_ERRORS[new URLSearchParams(location.search).get('login') ?? ''] ?? null,
   );
 
+  // Look of the page: museum frames for the guild pages (bank, follow), the forge for the crafting pages
+  private router = inject(Router);
+  readonly theme = signal<'forge' | 'museum'>('forge');
+  private themeOf = (url: string) =>
+    /^\/(banque|suivi)(\/|\?|#|$)/.test(url) ? 'museum' : 'forge';
+
   constructor() {
+    this.theme.set(this.themeOf(location.pathname));
+    this.router.events.subscribe((e) => {
+      if (e instanceof NavigationEnd) this.theme.set(this.themeOf(e.urlAfterRedirects));
+    });
     this.session.load();
     refreshOrders(this.session, this.orders, this.data);
   }
