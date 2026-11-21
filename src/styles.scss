@@ -2737,3 +2737,119 @@ h1.page-banner,
     gap: 0.3rem;
   }
 }
+
+// =====================================================================================================
+// Frames like the menu vignettes, from our art director (bagarre-club-cadres.css, 21/11/2026):
+// thick black outline, cream band, black inner line, speckled blood-red background, cream titles on a
+// red ribbon. Mapped on the site: .panel = .tooltip, .panel-title = panel h2 (h4 on small cards),
+// .panel .btn = buttons in panels, .panel .tab.active = active tab. Replaces the iron plates' background,
+// border, radius and shadows.
+// =====================================================================================================
+
+$da-frame-shadow:
+  inset 0 0 0 7px #f0c46e,
+  inset 0 0 0 12px #1a0b06,
+  inset 0 0 70px rgba(20, 2, 0, 0.65),
+  0 0 0 2px rgba(240, 196, 110, 0.35),
+  0 12px 26px rgba(0, 0, 0, 0.6);
+
+.theme-forge .tooltip,
+.theme-forge .order.tooltip:hover,
+.theme-forge .card.tooltip:hover,
+.theme-forge .highlight.patron,
+.theme-forge .highlight.rat {
+  position: relative;
+  border-radius: 30px;
+  border: 5px solid #1a0b06;
+  box-shadow: $da-frame-shadow;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='70' viewBox='0 0 90 70'%3E %3Cg stroke='%23f0a040' stroke-width='4' stroke-linecap='round' opacity='.85'%3E %3Cline x1='20' y1='12' x2='36' y2='30'/%3E%3Cline x1='44' y1='4' x2='48' y2='24'/%3E%3Cline x1='70' y1='8' x2='60' y2='28'/%3E %3Cline x1='8' y1='42' x2='28' y2='44'/%3E%3C/g%3E%3C/svg%3E") right 26px top 14px / 72px 56px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E %3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' seed='7' stitchTiles='stitch'/%3E %3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.62 0 0 0 0 0.38 10 0 0 0 -6.95'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.45'/%3E%3C/feComponentTransfer%3E%3C/filter%3E %3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E %3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035' numOctaves='4' seed='3' stitchTiles='stitch'/%3E %3CfeColorMatrix values='0 0 0 0 0.05 0 0 0 0 0 0 0 0 0 0 0 0 0 1.1 -0.45'/%3E%3C/filter%3E %3Crect width='100%25' height='100%25' filter='url(%23d)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 40% 30%, #7e2214, #5a140b 55%, #3a0906 100%);
+  color: #f6deb0;
+}
+.theme-forge .tooltip {
+  padding: 30px 32px;
+}
+// rows and cards in lists: same frame, less padding
+.theme-forge .order.tooltip,
+.theme-forge .card.tooltip,
+.theme-forge .cart-line.tooltip,
+.theme-forge .feedback.tooltip {
+  padding: 18px 22px;
+}
+.theme-forge .order.tooltip:hover,
+.theme-forge .card.tooltip:hover {
+  box-shadow:
+    $da-frame-shadow,
+    0 0 18px rgba(240, 196, 110, 0.35);
+}
+
+// frame titles on a red ribbon, cream letters outlined in black
+.theme-forge .tooltip h2,
+.theme-forge .tooltip h4 {
+  display: inline-block;
+  margin: 0 0 14px -6px;
+  padding: 8px 30px 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E %3Cdefs%3E%3ClinearGradient id='r' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23c9361d'/%3E%3Cstop offset='1' stop-color='%238e1d10'/%3E%3C/linearGradient%3E%3C/defs%3E %3Cpath d='M2 6 L398 2 L384 31 L398 58 L2 56 L16 30 Z' fill='url(%23r)' stroke='%231a0b06' stroke-width='4' vector-effect='non-scaling-stroke' stroke-linejoin='round'/%3E %3Cpath d='M10 10 L388 7 L377 31 L388 53 L10 51 L22 30 Z' fill='none' stroke='%23f2a55c' stroke-width='1.6' vector-effect='non-scaling-stroke' opacity='.9'/%3E %3C/svg%3E") 0 0 / 100% 100% no-repeat;
+  font-family: 'Sansita', 'Cooper Black', Georgia, serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 1.7rem;
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #f7d38a;
+  -webkit-text-stroke: 6px #1a0b06;
+  paint-order: stroke fill;
+  text-shadow: 3px 4px 0 #1a0b06;
+}
+// small cards (patron, rat, records, never gave, titles…): a smaller title
+.theme-forge .bank-side .tooltip h4,
+.theme-forge .tooltip h4 {
+  font-size: 1.25rem;
+  padding: 6px 22px 8px;
+}
+// buttons inside a title keep their own look, not the ribbon letters
+.theme-forge .tooltip h2 .btn,
+.theme-forge .tooltip h4 .btn {
+  -webkit-text-stroke: 0;
+  text-shadow: none;
+  font-style: normal;
+  vertical-align: middle;
+}
+
+// small description text under a title
+.theme-forge .tooltip .muted.small {
+  font-family: 'Sansita', Georgia, serif;
+  font-style: italic;
+  color: #f0c46e;
+  text-shadow: 2px 2px 0 #1a0b06;
+}
+
+// « Partager » and the other buttons in frames, and the matching tabs
+.theme-forge .tooltip .btn {
+  background: #f0c46e;
+  color: #1a0b06;
+  border: 3px solid #1a0b06;
+  border-radius: 999px;
+  box-shadow: 0 3px 0 #1a0b06;
+  font-weight: 800;
+  font-family: 'Sansita', Georgia, serif;
+  text-shadow: none;
+}
+.theme-forge .tooltip .tabs button.active {
+  background: #c9361d;
+  color: #f7d38a;
+  border: 3px solid #1a0b06;
+  box-shadow: none;
+}
+// the goal frame shows the target top right: no decorative rays there
+.theme-forge .tooltip.goal {
+  background-size:
+    0 0,
+    auto,
+    auto,
+    auto;
+}
