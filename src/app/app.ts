@@ -29,9 +29,28 @@ const LOGIN_ERRORS: Record<string, string> = {
             routerLink="/"
             routerLinkActive="active"
             [routerLinkActiveOptions]="{ exact: true }"
-            class="nav-text"
-            >Grimoire</a
+            title="Grimoire des recettes"
           >
+            <img src="/nav/grimoire.webp" alt="Grimoire" />
+          </a>
+          <a routerLink="/banque" routerLinkActive="active" title="Banque de guilde">
+            <img src="/nav/banque.webp" alt="Banque" />
+          </a>
+          <a routerLink="/suivi" routerLinkActive="active" title="Suivi">
+            <img src="/nav/suivi.webp" alt="Suivi" />
+          </a>
+          <a routerLink="/hauts-faits" routerLinkActive="active" title="Hauts faits">
+            <img src="/nav/hauts-faits.webp" alt="Hauts faits" />
+          </a>
+          <a routerLink="/atelier" routerLinkActive="active" title="Mon atelier">
+            <img src="/nav/atelier.webp" alt="Atelier" />
+            @if (orders.receivedPending().length) {
+              <span class="badge">{{ orders.receivedPending().length }}</span>
+            }
+          </a>
+          <a routerLink="/defis" routerLinkActive="active" title="Défis de guilde">
+            <img src="/nav/defis.webp" alt="Défis" />
+          </a>
           <a routerLink="/panier" routerLinkActive="active" title="Panier">
             <img src="/nav/panier.webp" alt="Panier" />
             @if (cart.count()) {
@@ -43,24 +62,6 @@ const LOGIN_ERRORS: Record<string, string> = {
             @if (orders.placedPending().length) {
               <span class="badge dim">{{ orders.placedPending().length }}</span>
             }
-          </a>
-          <a routerLink="/atelier" routerLinkActive="active" title="Mon atelier">
-            <img src="/nav/atelier.webp" alt="Atelier" />
-            @if (orders.receivedPending().length) {
-              <span class="badge">{{ orders.receivedPending().length }}</span>
-            }
-          </a>
-          <a routerLink="/banque" routerLinkActive="active" title="Banque de guilde">
-            <img src="/nav/banque.webp" alt="Banque" />
-          </a>
-          <a routerLink="/suivi" routerLinkActive="active" title="Suivi">
-            <img src="/nav/suivi.webp" alt="Suivi" />
-          </a>
-          <a routerLink="/hauts-faits" routerLinkActive="active" title="Hauts faits">
-            <img src="/nav/hauts-faits.webp" alt="Hauts faits" />
-          </a>
-          <a routerLink="/defis" routerLinkActive="active" title="Défis de guilde">
-            <img src="/nav/defis.webp" alt="Défis" />
           </a>
         </nav>
         <div class="user">

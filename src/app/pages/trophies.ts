@@ -56,7 +56,7 @@ const YES_NO = new Set(['penny', 'repentant']);
           Vitrines
         </button>
         <button type="button" [class.active]="tab() === 'gallery'" (click)="tab.set('gallery')">
-          Galerie des saisons
+          Galerie de la semaine
         </button>
       </div>
     </div>
@@ -66,12 +66,12 @@ const YES_NO = new Set(['penny', 'repentant']);
     @if (data(); as d) {
       @if (tab() === 'gallery') {
         <p class="muted small">
-          Une saison dure une semaine, du lundi au dimanche. Ses vainqueurs restent accrochés ici.
+          Chaque semaine, du lundi au dimanche, a ses vainqueurs : ils restent accrochés ici.
         </p>
         <div class="gallery">
           @for (s of d.seasons; track s.week) {
             <article class="tooltip season">
-              <h3>Saison du {{ date(s.start) }} au {{ date(s.end - 1) }}</h3>
+              <h3>Semaine du {{ date(s.start) }} au {{ date(s.end - 1) }}</h3>
               <div class="season-winners">
                 <div class="season-winner">
                   <span class="season-icon">👑</span>
@@ -107,7 +107,7 @@ const YES_NO = new Set(['penny', 'repentant']);
             </article>
           } @empty {
             <div class="tooltip empty">
-              <p>Aucune saison terminée pour l’instant : la première se clôt dimanche soir.</p>
+              <p>Aucune semaine terminée pour l’instant : la première se clôt dimanche soir.</p>
             </div>
           }
         </div>

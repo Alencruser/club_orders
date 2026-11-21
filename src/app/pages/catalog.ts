@@ -29,6 +29,9 @@ const PAGE = 24;
   selector: 'app-catalog',
   imports: [FormsModule, RecipeCardComponent],
   template: `
+    <div class="page-head">
+      <h1 class="page-banner"><img src="/titles/grimoire.webp" alt="Grimoire" /></h1>
+    </div>
     <div class="book">
       <nav class="book-index tooltip" aria-label="Métiers">
         <h2>Grimoire</h2>
