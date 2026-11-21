@@ -1347,18 +1347,17 @@ input[type='checkbox'] {
   width: 100%;
 }
 
-// --- Background: « Trésor de guilde » ---
-// A fixed layer behind the page (works on phones too, unlike background-attachment: fixed). cover keeps
-// the image's ratio at every window size: it is cropped on the sides or at the top and bottom, never
-// stretched. A dark veil keeps the texts outside the panels readable.
+// --- Background: bordeaux parchment ---
+// A fixed layer behind the page (works on phones too, unlike background-attachment: fixed). A plain
+// texture: it is stretched to the whole window. A light veil keeps the texts outside the panels readable.
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(180deg, rgba(7, 8, 13, 0.45), rgba(7, 8, 13, 0.6)),
-    url('/tresor-de-guilde.webp') center / cover no-repeat,
+    linear-gradient(180deg, rgba(7, 8, 13, 0.15), rgba(7, 8, 13, 0.35)),
+    url('/parchemin-bordeaux.webp') center / 100% 100% no-repeat,
     var(--bg);
   pointer-events: none;
 }
