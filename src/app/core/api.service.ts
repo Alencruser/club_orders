@@ -3,6 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   AchievementsSummary,
+  AdminChannel,
+  AdminState,
   Artisan,
   Challenge,
   BankSummary,
@@ -92,6 +94,40 @@ export class ApiService {
         '/api/feedback/channels',
       )
     ).channels;
+  }
+
+  // Admin page: SITE_ADMINS only (404 for anyone else)
+  adminState() {
+    return this.get<AdminState>('/api/admin/state');
+  }
+
+  async adminChannels() {
+    return (await this.get<{ channels: AdminChannel[] }>('/api/admin/channels')).channels;
+  }
+
+  // channelId null: unlink
+  adminLink(key: string, channelId: string | null) {
+    return this.post<{ text: string; warning?: string | null }>('/api/admin/slot', { key, channelId });
+  }
+
+  async adminCode(renew = false) {
+    return (await this.post<{ code: string }>('/api/admin/code', { renew })).code;
+  }
+
+  adminClosePrivates() {
+    return this.post<{ privates: number; prompts: number }>('/api/admin/closepm', {});
+  }
+
+  adminResolve(id: string) {
+    return this.post<{ done: boolean }>(`/api/admin/anomalies/${id}/resolve`, {});
+  }
+
+  adminClearAnomalies() {
+    return this.post<{ cleared: number }>('/api/admin/anomalies/clear', {});
+  }
+
+  adminDeleteOrphan(id: string) {
+    return this.post<{ removed: number }>(`/api/admin/orphans/${id}/delete`, {});
   }
 
   // Posts it on Discord with 👍 / 👎 buttons and a thread; returns the message link

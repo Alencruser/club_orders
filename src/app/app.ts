@@ -69,6 +69,17 @@ const LOGIN_ERRORS: Record<string, string> = {
           >
             💡
           </button>
+          @if (session.me()?.siteAdmin) {
+            <a
+              routerLink="/admin"
+              routerLinkActive="active"
+              class="icon-btn feedback-link"
+              title="Tableau de bord du bot (visible seulement par vous deux)"
+              aria-label="Tableau de bord du bot"
+            >
+              ⚙️
+            </a>
+          }
           @if (session.me()?.feedbackAdmin) {
             <a
               routerLink="/feedback"

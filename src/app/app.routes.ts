@@ -4,7 +4,6 @@ import { BankPage } from './pages/bank';
 import { CartPage } from './pages/cart';
 import { CatalogPage } from './pages/catalog';
 import { HomePage } from './pages/home';
-import { FeedbackPage } from './pages/feedback';
 import { FollowPage } from './pages/follow';
 import { TrophiesPage } from './pages/trophies';
 import { ChallengesPage } from './pages/challenges';
@@ -20,7 +19,9 @@ export const routes: Routes = [
   { path: 'suivi', component: FollowPage, title: 'Suivi · Bagarre club' },
   { path: 'hauts-faits', component: TrophiesPage, title: 'Hauts faits · Bagarre club' },
   { path: 'defis', component: ChallengesPage, title: 'Défis · Bagarre club' },
-  // hidden: no link anywhere, and the bot only answers FEEDBACK_ADMINS accounts
-  { path: 'feedback', component: FeedbackPage, title: 'Retours · Bagarre club' },
+  // hidden: linked only for SITE_ADMINS accounts (top bar), and the bot only answers them
+  // loaded on demand: only two accounts ever open them
+  { path: 'admin', loadComponent: () => import('./pages/admin').then((m) => m.AdminPage), title: 'Tableau de bord · Bagarre club' },
+  { path: 'feedback', loadComponent: () => import('./pages/feedback').then((m) => m.FeedbackPage), title: 'Retours · Bagarre club' },
   { path: '**', redirectTo: '' },
 ];

@@ -6,7 +6,8 @@ export interface Me {
   characters: Character[];
   note: string | null;
   admin?: boolean; // bot admin: may share the guild cards on Discord
-  feedbackAdmin?: boolean; // FEEDBACK_ADMINS: may read the hidden /feedback page
+  feedbackAdmin?: boolean; // SITE_ADMINS: may read the hidden /feedback page
+  siteAdmin?: boolean; // SITE_ADMINS: may use the hidden /admin page
 }
 
 export interface Character {
@@ -351,4 +352,73 @@ export interface HomeData {
       macIntel: string | null;
     } | null;
   } | null;
+}
+
+// Admin page (bot: admin-web.js, /api/admin/*, SITE_ADMINS only). Dates in ms.
+export interface AdminSlot {
+  key: string;
+  emoji: string;
+  label: string;
+  what: string;
+  missing?: string; // what happens without a channel
+  note?: string; // read-only: where it is set
+  unlinkable: boolean;
+  readOnly: boolean;
+  channelId: string | null;
+  channelName: string | null;
+  problem: string | null;
+}
+
+export interface AdminAnomaly {
+  id: string;
+  kind: 'log' | 'interaction' | 'rejection' | 'uncaught' | 'integrity' | 'orphan';
+  kindLabel: string;
+  severity: 'red' | 'orange' | 'benign';
+  title: string;
+  hint: string | null;
+  feature: string | null;
+  where: string | null;
+  code: string | number | null;
+  count: number | null;
+  first: number | null;
+  last: number | null;
+  message: string | null;
+  stack: string | null;
+  context: { action: string | null; user: string | null; channel: string | null; at: number | null } | null;
+  battletag: string | null;
+  items: string[] | null; // orphan: what is stored under the battletag
+}
+
+export interface AdminState {
+  now: number;
+  version: { hash: string; subject: string; date: number | null } | null; // date in seconds
+  startedAt: number;
+  ping: number;
+  memoryMb: number;
+  receiver: {
+    port: number | null;
+    route: string | null;
+    listening: boolean;
+    url: string | null;
+    requests: { type: string; label: string; at: number; status: number; text: string; test?: boolean }[];
+  };
+  adminPublic: boolean;
+  keyPresent: boolean;
+  filters: { guild: string | null; realm: string | null };
+  pending: { prompts: number; privates: number };
+  warnings: string[];
+  slots: AdminSlot[];
+  counts: { key: string; emoji: string; label: string; unit: string; count: number }[];
+  anomalies: {
+    items: AdminAnomaly[];
+    benign: { key: string; label: string; count: number; last: number }[];
+    counts: { red: number; orange: number; benign: number };
+  };
+}
+
+export interface AdminChannel {
+  id: string;
+  name: string;
+  parent: string | null;
+  botCanWrite: boolean;
 }
