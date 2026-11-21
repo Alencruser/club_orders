@@ -2309,3 +2309,108 @@ $frame-wood: linear-gradient(135deg, #9a6630, #4a2a12 35%, #8a5428 55%, #3a200c)
     font-weight: 600;
   }
 }
+
+// --- Forge everywhere: the guild pages (bank, follow, trophies, challenges) in iron and heat ---
+$heat: linear-gradient(90deg, #5a1404, #c43d0a 50%, #ff8a2a 85%, #ffe08a);
+
+.theme-forge {
+  .goal-bar {
+    border-color: #5a544e;
+    background: #0e0b09;
+  }
+  .goal-fill,
+  .rank-gauge > span:not(.neg),
+  .title-bar > span,
+  .challenge-bar > span {
+    background: $heat;
+    box-shadow: 0 0 12px rgba(255, 110, 30, 0.7);
+  }
+  .goal-fill::after {
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      rgba(255, 240, 200, 0.4) 50%,
+      transparent 70%
+    );
+  }
+  .rank-gauge,
+  .title-bar,
+  .challenge-bar {
+    background: #0e0b09;
+  }
+  .goal-target .money.big {
+    color: var(--gold);
+    text-shadow:
+      0 2px 0 #1c1917,
+      0 0 18px rgba(255, 140, 40, 0.5);
+  }
+  .goal-target-label,
+  .goal-target-label {
+    font-family: Metamorphous, Georgia, serif;
+  }
+  .cartel {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #ecc96e, #a87b2a 55%, #6e4c14);
+    color: #2a1a06;
+    font-family: Metamorphous, Georgia, serif;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      0 3px 8px rgba(0, 0, 0, 0.6);
+  }
+  .highlight.patron {
+    box-shadow:
+      inset 0 0 0 2px #a87b2a,
+      inset 0 0 0 4px #1c1917,
+      inset 0 0 34px rgba(0, 0, 0, 0.6),
+      0 8px 18px rgba(0, 0, 0, 0.6),
+      0 0 16px rgba(255, 190, 70, 0.25);
+  }
+  .highlight.rat {
+    box-shadow:
+      inset 0 0 0 2px #8c3a20,
+      inset 0 0 0 4px #1c1917,
+      inset 0 0 34px rgba(0, 0, 0, 0.6),
+      0 8px 18px rgba(0, 0, 0, 0.6);
+  }
+  .highlight-who,
+  .follow-big,
+  .craft-title {
+    font-family: Metamorphous, Georgia, serif;
+  }
+  .trophy {
+    background:
+      radial-gradient(
+        ellipse at 20% 0%,
+        color-mix(in srgb, var(--rarity) 16%, transparent),
+        transparent 60%
+      ),
+      linear-gradient(160deg, #3a3532, #1f1c1a);
+  }
+  .trophy-icon {
+    background: radial-gradient(circle at 35% 30%, #4a4440, #1c1917);
+  }
+  .title-plaque {
+    background: linear-gradient(180deg, rgba(236, 201, 110, 0.12), rgba(0, 0, 0, 0.3));
+    border-color: rgba(168, 123, 42, 0.6);
+  }
+  .season-winner {
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: inset 0 0 0 1px #3a3430;
+  }
+  .ranking li:hover {
+    background: rgba(255, 140, 40, 0.07);
+    box-shadow: inset 3px 0 0 #ff8a2a;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .theme-forge .goal-fill {
+    animation: forge-glow 2.6s ease-in-out infinite alternate;
+  }
+}
+@keyframes forge-glow {
+  to {
+    filter: brightness(1.2);
+  }
+}

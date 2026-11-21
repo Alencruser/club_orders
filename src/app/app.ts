@@ -137,11 +137,11 @@ export class App {
     () => LOGIN_ERRORS[new URLSearchParams(location.search).get('login') ?? ''] ?? null,
   );
 
-  // Look of the page: museum frames for the guild pages (bank, follow), the forge for the crafting pages
+  // Look of the page
   private router = inject(Router);
   readonly theme = signal<'forge' | 'museum'>('forge');
-  private themeOf = (url: string) =>
-    /^\/(banque|suivi|hauts-faits|defis)(\/|\?|#|$)/.test(url) ? 'museum' : 'forge';
+  // the forge everywhere (the museum frames are kept in styles.scss, unused)
+  private themeOf = (_url: string): 'forge' | 'museum' => 'forge';
 
   constructor() {
     this.theme.set(this.themeOf(location.pathname));
