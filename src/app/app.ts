@@ -25,12 +25,7 @@ const LOGIN_ERRORS: Record<string, string> = {
       </a>
       @if (session.status() === 'in') {
         <nav class="nav nav-images">
-          <a
-            routerLink="/"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: true }"
-            title="Grimoire des recettes"
-          >
+          <a routerLink="/grimoire" routerLinkActive="active" title="Grimoire des recettes">
             <img src="/nav/grimoire.webp" alt="Grimoire" />
           </a>
           <a routerLink="/banque" routerLinkActive="active" title="Banque de guilde">

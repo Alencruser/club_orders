@@ -20,7 +20,7 @@ import { IconComponent, MaterialsComponent, classColor } from '../shared/ui';
     @if (!cart.lines().length) {
       <div class="tooltip empty">
         <p>Ton panier est vide.</p>
-        <a routerLink="/" class="btn gold">Ouvrir le grimoire</a>
+        <a routerLink="/grimoire" class="btn gold">Ouvrir le grimoire</a>
       </div>
     } @else {
       <div class="two-cols">

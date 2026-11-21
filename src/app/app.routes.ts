@@ -3,6 +3,7 @@ import { ArtisanPage } from './pages/artisan';
 import { BankPage } from './pages/bank';
 import { CartPage } from './pages/cart';
 import { CatalogPage } from './pages/catalog';
+import { HomePage } from './pages/home';
 import { FeedbackPage } from './pages/feedback';
 import { FollowPage } from './pages/follow';
 import { TrophiesPage } from './pages/trophies';
@@ -10,7 +11,8 @@ import { ChallengesPage } from './pages/challenges';
 import { MyOrdersPage } from './pages/my-orders';
 
 export const routes: Routes = [
-  { path: '', component: CatalogPage, title: 'Grimoire · Bagarre club' },
+  { path: '', component: HomePage, title: 'Bagarre club' },
+  { path: 'grimoire', component: CatalogPage, title: 'Grimoire · Bagarre club' },
   { path: 'panier', component: CartPage, title: 'Panier · Bagarre club' },
   { path: 'commandes', component: MyOrdersPage, title: 'Mes commandes · Bagarre club' },
   { path: 'atelier', component: ArtisanPage, title: 'Atelier · Bagarre club' },

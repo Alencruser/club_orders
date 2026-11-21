@@ -9,6 +9,7 @@ import {
   Catalog,
   FeedbackItem,
   FollowSummary,
+  HomeData,
   Me,
   Order,
   Tooltip,
@@ -95,6 +96,10 @@ export class ApiService {
 
   follow() {
     return this.get<FollowSummary>('/api/follow');
+  }
+
+  home() {
+    return this.get<HomeData>('/api/home');
   }
 
   achievements() {

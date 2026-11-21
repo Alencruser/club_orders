@@ -273,3 +273,77 @@ export interface Challenge {
   status: 'upcoming' | 'active' | 'done' | 'failed';
   completedAt: number | null;
 }
+
+// Home page (bot: home.js, /api/home). Dates in seconds.
+export interface HomePerson {
+  userId: string | null;
+  name: string;
+  avatar: string | null;
+}
+export interface HomeEvent {
+  id: string;
+  type: string;
+  at: number;
+  player?: HomePerson;
+  name?: string;
+  class?: string;
+  level?: number;
+  zone?: string | null;
+  killer?: string | null;
+  opponent?: string;
+  copper?: number;
+  percent?: number;
+  title?: string;
+  rarity?: string;
+  reward?: string;
+  start?: number;
+  end?: number;
+  bank?: HomePerson & { value: number };
+  follow?: HomePerson & { value: number };
+  craft?: HomePerson & { value: number };
+}
+export interface HomeData {
+  me: HomePerson & {
+    titles: { bank?: string | null; follow?: string | null; craft?: string | null };
+    trophies: number;
+    trophiesTotal: number;
+    next: (AchievementDef & { value: number; target: number; share: number })[];
+  };
+  bank: {
+    goal: number;
+    money: number | null;
+    milestones: { percent: number; at: number | null }[];
+  };
+  challenges: Challenge[];
+  season: {
+    start: number;
+    end: number;
+    bank: (HomePerson & { value: number }) | null;
+    follow: (HomePerson & { value: number }) | null;
+    craft: (HomePerson & { value: number }) | null;
+  };
+  feed: HomeEvent[];
+  activities: {
+    id: string;
+    type: string;
+    label: string;
+    emoji: string;
+    title: string | null;
+    at: number;
+    level: number | string | null;
+    organizer: HomePerson;
+    members: number;
+  }[];
+  members: (HomePerson & { characters: { name: string; class: string; level: number }[] })[];
+  versions: {
+    curseforge: string;
+    addon: { version: string; url: string } | null;
+    companion: {
+      version: string;
+      url: string;
+      windows: string | null;
+      mac: string | null;
+      macIntel: string | null;
+    } | null;
+  } | null;
+}

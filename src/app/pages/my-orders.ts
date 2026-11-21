@@ -41,7 +41,7 @@ import { MaterialsComponent } from '../shared/ui';
       } @else if (orders.loaded()) {
         <div class="tooltip empty">
           <p>Aucune commande en cours.</p>
-          <a routerLink="/" class="btn gold">Ouvrir le grimoire</a>
+          <a routerLink="/grimoire" class="btn gold">Ouvrir le grimoire</a>
         </div>
       }
     } @else {
