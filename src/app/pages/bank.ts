@@ -32,7 +32,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
   template: `
     <div class="page-head">
       <div>
-        <h1>Banque de guilde</h1>
+        <h1 class="page-banner"><img src="/titles/banque.webp" alt="Banque de guilde" /></h1>
         <p class="muted small">
           Dépôts et retraits d’argent, tous les persos d’un membre réunis · réparations non comptées
         </p>

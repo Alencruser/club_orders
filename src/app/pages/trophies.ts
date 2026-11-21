@@ -46,7 +46,7 @@ const YES_NO = new Set(['penny', 'repentant']);
   template: `
     <div class="page-head">
       <div>
-        <h1>Hauts faits</h1>
+        <h1 class="page-banner"><img src="/titles/hauts-faits.webp" alt="Hauts faits" /></h1>
         <p class="muted small">
           Titres et trophées des membres, gagnés à la banque, en suivi et à l’atelier
         </p>

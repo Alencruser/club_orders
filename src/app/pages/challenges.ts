@@ -35,7 +35,7 @@ const toSeconds = (day: string, nextDay = false) => {
   template: `
     <div class="page-head">
       <div>
-        <h1>Défis de guilde</h1>
+        <h1 class="page-banner"><img src="/titles/defis.webp" alt="Défis de guilde" /></h1>
         <p class="muted small">Des objectifs à remplir tous ensemble, lancés par les admins</p>
       </div>
     </div>

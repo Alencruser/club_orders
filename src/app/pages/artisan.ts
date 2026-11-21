@@ -18,7 +18,7 @@ import { AchievementsSummary } from '../core/models';
   imports: [FormsModule, OrderRowComponent, MaterialsComponent, AvatarComponent],
   template: `
     <div class="page-head">
-      <h1>Mon atelier</h1>
+      <h1 class="page-banner"><img src="/titles/atelier.webp" alt="Mon atelier" /></h1>
       <div class="tabs">
         <button type="button" [class.active]="tab() === 'current'" (click)="tab.set('current')">
           À faire ({{ orders.receivedPending().length }})

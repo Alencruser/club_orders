@@ -2620,3 +2620,51 @@ $heat: linear-gradient(90deg, #5a1404, #c43d0a 50%, #ff8a2a 85%, #ffe08a);
     transition: none;
   }
 }
+
+// --- Page titles as picture banners (same pictures as the menu) ---
+.page-head h1.page-banner,
+.theme-forge .page-head h1.page-banner {
+  display: block;
+  margin: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  line-height: 0;
+  img {
+    display: block;
+    height: 72px;
+    width: auto;
+    max-width: 100%;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+  }
+}
+@media (max-width: 900px) {
+  .page-head h1.page-banner img {
+    height: 54px;
+  }
+}
+
+// --- One top bar: Bagarre club icon, the page banners, the account (no hamburger) ---
+.brand img[src*='bagarre-club'] {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  border: 2px solid #a87b2a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  object-fit: cover;
+}
+.topbar:has(.nav-images) {
+  padding-bottom: 0.6rem;
+}
+.topbar .nav-images {
+  order: 0;
+  flex: 1 1 auto;
+  flex-basis: auto;
+  justify-content: center;
+}
+// narrower screens: the account block shrinks so the banners and the account stay on one row
+@media (max-width: 1600px) {
+  .user .user-label {
+    display: none;
+  }
+}

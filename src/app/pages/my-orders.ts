@@ -11,7 +11,7 @@ import { MaterialsComponent } from '../shared/ui';
   imports: [RouterLink, OrderRowComponent, MaterialsComponent],
   template: `
     <div class="page-head">
-      <h1>Mes commandes</h1>
+      <h1 class="page-banner"><img src="/titles/commandes.webp" alt="Mes commandes" /></h1>
       <div class="tabs">
         <button type="button" [class.active]="tab() === 'current'" (click)="tab.set('current')">
           En cours ({{ orders.placedPending().length }})

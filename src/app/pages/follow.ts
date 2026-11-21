@@ -12,7 +12,7 @@ import { ShareButtonComponent } from '../shared/share-button';
   template: `
     <div class="page-head">
       <div>
-        <h1>Suivi</h1>
+        <h1 class="page-banner"><img src="/titles/suivi.webp" alt="Suivi" /></h1>
         <p class="muted small">
           Temps passé en /follow derrière un guildeux, tous les persos d’un membre réunis
         </p>
