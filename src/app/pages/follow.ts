@@ -22,7 +22,7 @@ import { ShareButtonComponent } from '../shared/share-button';
           Depuis le début
         </button>
         <button type="button" [class.active]="period() === 'week'" (click)="period.set('week')">
-          7 derniers jours
+          Cette semaine
         </button>
       </div>
     </div>
@@ -53,7 +53,14 @@ import { ShareButtonComponent } from '../shared/share-button';
           @for (m of ranked(); track m.id; let i = $index) {
             <li [class.open]="open() === m.id" [class.unlinked]="!m.linked">
               <button type="button" class="rank-row" (click)="toggle(m.id)">
-                <span class="medal m{{ i }}">{{ i + 1 }}</span>
+                <span class="medal m{{ i }}"
+                  >{{ i + 1 }}
+                  @if (period() === 'all' && m.move) {
+                    <i class="move" [class.down]="m.move < 0"
+                      >{{ m.move > 0 ? '▲' : '▼' }}{{ m.move > 0 ? m.move : -m.move }}</i
+                    >
+                  }
+                </span>
                 <app-avatar [src]="m.avatar" [name]="m.name" />
                 <span class="rank-name">
                   {{ m.name }}
@@ -154,7 +161,7 @@ export class FollowPage {
   }
 
   time(m: FollowMember) {
-    return this.period() === 'week' ? m.week : m.seconds;
+    return this.period() === 'week' ? m.season : m.seconds;
   }
   toggle(id: string) {
     this.open.set(this.open() === id ? null : id);

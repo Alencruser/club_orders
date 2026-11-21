@@ -10,9 +10,10 @@ import {
   liveRefresh,
 } from '../shared/guild-ui';
 
-type Ranking = 'net' | 'dep' | 'maxDep' | 'maxWd' | 'streak' | 'deposits' | 'minDep';
+type Ranking = 'season' | 'net' | 'dep' | 'maxDep' | 'maxWd' | 'streak' | 'deposits' | 'minDep';
 
 const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number | null }[] = [
+  { key: 'season', label: 'Cette semaine', value: (m) => m.seasonNet || null },
   { key: 'net', label: 'Solde net', value: (m) => m.net },
   { key: 'dep', label: 'Total déposé', value: (m) => m.dep || null },
   { key: 'maxDep', label: 'Plus gros dépôt', value: (m) => m.maxDep?.copper ?? null },
@@ -79,6 +80,17 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
             @for (t of ticks; track t) {
               <span class="goal-tick" [style.left.%]="t"></span>
             }
+            @for (ms of d.milestones; track ms.percent) {
+              @if (ms.percent < 100) {
+                <span
+                  class="goal-chest"
+                  [class.open]="ms.at"
+                  [style.left.%]="ms.percent"
+                  [attr.title]="ms.percent + ' % ' + (ms.at ? 'atteint' : 'à atteindre')"
+                  >{{ ms.at ? '💰' : '🔒' }}</span
+                >
+              }
+            }
             <span class="goal-percent">{{ percent() }} %</span>
           </div>
         </section>
@@ -104,7 +116,14 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
             @for (m of ranked(); track m.id; let i = $index) {
               <li [class.open]="open() === m.id" [class.unlinked]="!m.linked">
                 <button type="button" class="rank-row" (click)="toggle(m.id)">
-                  <span class="medal m{{ i }}">{{ i + 1 }}</span>
+                  <span class="medal m{{ i }}"
+                    >{{ i + 1 }}
+                    @if (ranking() === 'net' && m.move) {
+                      <i class="move" [class.down]="m.move < 0"
+                        >{{ m.move > 0 ? '▲' : '▼' }}{{ m.move > 0 ? m.move : -m.move }}</i
+                      >
+                    }
+                  </span>
                   <app-avatar [src]="m.avatar" [name]="m.name" />
                   <span class="rank-name">
                     {{ m.name }}
@@ -126,6 +145,9 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
                       }
                       @case ('deposits') {
                         {{ m.deposits }} dépôt{{ m.deposits > 1 ? 's' : '' }}
+                      }
+                      @case ('season') {
+                        <app-money [copper]="m.seasonNet" [sign]="true" />
                       }
                       @case ('dep') {
                         <app-money [copper]="m.dep" />

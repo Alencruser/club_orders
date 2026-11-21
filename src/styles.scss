@@ -2035,3 +2035,242 @@ $frame-wood: linear-gradient(135deg, #9a6630, #4a2a12 35%, #8a5428 55%, #3a200c)
     animation: first-glow 2.4s ease-in-out infinite alternate;
   }
 }
+
+// --- Goal milestones, rank arrows, seasons gallery, artisan sheet, challenges ---
+.goal-bar {
+  overflow: visible;
+}
+.goal-chest {
+  position: absolute;
+  top: -11px;
+  transform: translateX(-50%);
+  font-size: 1rem;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px #000);
+  opacity: 0.75;
+  &.open {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(255, 209, 0, 0.9));
+  }
+}
+.medal {
+  position: relative;
+}
+.move {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  margin-top: 1px;
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--green);
+  white-space: nowrap;
+  text-shadow: 0 1px 2px #000;
+  &.down {
+    color: var(--red);
+  }
+}
+.fresh {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffb26b;
+  background: rgba(255, 110, 30, 0.15);
+  border: 1px solid rgba(255, 138, 42, 0.6);
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 1rem;
+}
+.season h3 {
+  margin: 0 0 0.6rem;
+}
+.season-winners {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  text-align: center;
+}
+.season-winner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.5rem 0.3rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  h4 {
+    margin: 0;
+    font-size: 0.68rem;
+  }
+  strong {
+    color: var(--gold);
+  }
+}
+.season-icon {
+  font-size: 1.6rem;
+  filter: drop-shadow(0 0 6px rgba(255, 200, 90, 0.5));
+}
+
+.craft-sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+  h4 {
+    margin-top: 0;
+  }
+}
+.craft-title {
+  display: block;
+  font-family: Metamorphous, Georgia, serif;
+  font-size: 1.35rem;
+  color: var(--gold);
+  margin-bottom: 0.3rem;
+}
+.craft-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-bottom: 0.5rem;
+  b {
+    color: var(--gold);
+    font-size: 1.15rem;
+  }
+}
+.heat-bar {
+  display: block;
+  height: 12px;
+  margin: 0.2rem 0 0.3rem;
+  border-radius: 999px;
+  background: #0e0b09;
+  box-shadow: inset 0 2px 5px #000;
+  overflow: hidden;
+  > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #5a1404, #c43d0a 50%, #ff8a2a 85%, #ffe08a);
+    box-shadow: 0 0 12px rgba(255, 110, 30, 0.8);
+  }
+}
+.craft-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  b {
+    color: var(--gold);
+  }
+  .rank-title {
+    display: inline;
+    margin-left: 0.3rem;
+  }
+}
+
+.challenge-form {
+  margin-bottom: 1.2rem;
+  h2 {
+    margin-top: 0;
+  }
+}
+.challenge-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 0.8rem;
+  .field {
+    min-width: 140px;
+  }
+}
+.challenge-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: 1rem;
+}
+.challenge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  p {
+    margin: 0;
+  }
+  .btn {
+    align-self: flex-start;
+    margin-top: 0.3rem;
+  }
+  &.s-failed,
+  &.s-upcoming {
+    opacity: 0.75;
+  }
+}
+.challenge-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  h3 {
+    margin: 0;
+  }
+}
+.challenge-status {
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-soft);
+  .s-active & {
+    color: var(--gold);
+    border-color: var(--gold-dim);
+  }
+  .s-done & {
+    color: var(--green);
+    border-color: rgba(30, 255, 0, 0.5);
+  }
+  .s-failed & {
+    color: var(--red);
+  }
+}
+.challenge-bar {
+  display: block;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 2px 5px #000;
+  overflow: hidden;
+  > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: repeating-linear-gradient(-45deg, #f0c870 0 7px, #b48a3c 7px 14px);
+    box-shadow: 0 0 12px rgba(255, 200, 90, 0.5);
+  }
+  .s-done & > span {
+    background: repeating-linear-gradient(-45deg, #7dff6a 0 7px, #2a9a1a 7px 14px);
+  }
+}
+.challenge-progress {
+  font-weight: 700;
+}
+.challenge-reward {
+  color: var(--gold);
+}
+@media (max-width: 900px) {
+  .craft-sheet {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .season-winners {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

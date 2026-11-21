@@ -50,6 +50,7 @@ const LOGIN_ERRORS: Record<string, string> = {
           <a routerLink="/banque" routerLinkActive="active">Banque</a>
           <a routerLink="/suivi" routerLinkActive="active">Suivi</a>
           <a routerLink="/hauts-faits" routerLinkActive="active">Hauts faits</a>
+          <a routerLink="/defis" routerLinkActive="active">Défis</a>
         </nav>
         <div class="user">
           <button type="button" class="btn ghost" (click)="feedbackOpen.set(true)">
@@ -140,7 +141,7 @@ export class App {
   private router = inject(Router);
   readonly theme = signal<'forge' | 'museum'>('forge');
   private themeOf = (url: string) =>
-    /^\/(banque|suivi|hauts-faits)(\/|\?|#|$)/.test(url) ? 'museum' : 'forge';
+    /^\/(banque|suivi|hauts-faits|defis)(\/|\?|#|$)/.test(url) ? 'museum' : 'forge';
 
   constructor() {
     this.theme.set(this.themeOf(location.pathname));

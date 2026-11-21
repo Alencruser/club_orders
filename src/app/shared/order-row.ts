@@ -31,6 +31,11 @@ export const STATUS: Record<string, { icon: string; text: string }> = {
               >{{ o.qty }} × {{ o.item.name }}</strong
             >
             <span class="status s-{{ o.status }}">{{ status().icon }} {{ status().text }}</span>
+            @if (fresh()) {
+              <span class="fresh" title="Commande passée il y a moins de 24 heures"
+                >🔥 Nouvelle</span
+              >
+            }
             @if (o.archived) {
               <span
                 class="muted small"
@@ -133,6 +138,13 @@ export class OrderRowComponent {
 
   readonly order = input.required<Order>();
   readonly side = input<'buyer' | 'artisan'>('buyer');
+  // artisan side: an order placed less than 24 hours ago, still to do
+  readonly fresh = computed(
+    () =>
+      this.side() === 'artisan' &&
+      this.order().status === 'pending' &&
+      Date.now() - this.order().createdAt < 24 * 3600 * 1000,
+  );
 
   readonly open = signal(false);
   readonly busy = signal(false);

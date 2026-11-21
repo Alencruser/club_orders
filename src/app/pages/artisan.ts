@@ -8,12 +8,14 @@ import { SessionService } from '../core/session.service';
 import { ToastService } from '../core/toast.service';
 import { OrderRowComponent } from '../shared/order-row';
 import { MaterialsComponent, classColor } from '../shared/ui';
+import { AvatarComponent, liveRefresh } from '../shared/guild-ui';
+import { AchievementsSummary } from '../core/models';
 
 // Artisan side: orders received by my characters, grouped by buyer, with the materials per buyer and
 // in total; my artisan note; the orders already handled.
 @Component({
   selector: 'app-artisan',
-  imports: [FormsModule, OrderRowComponent, MaterialsComponent],
+  imports: [FormsModule, OrderRowComponent, MaterialsComponent, AvatarComponent],
   template: `
     <div class="page-head">
       <h1>Mon atelier</h1>
@@ -26,6 +28,50 @@ import { MaterialsComponent, classColor } from '../shared/ui';
         </button>
       </div>
     </div>
+
+    @if (craft(); as c) {
+      <div class="craft-sheet">
+        <section class="tooltip craft-me">
+          <h4>Ma fiche d’artisan</h4>
+          <strong class="craft-title">{{
+            c.me?.titles?.craft?.current?.name ?? 'Pas encore de titre'
+          }}</strong>
+          <div class="craft-numbers">
+            <span
+              ><b>{{ c.me?.delivered ?? 0 }}</b> commande(s) livrée(s)</span
+            >
+            <span
+              ><b>{{ c.me?.deliveredSeason ?? 0 }}</b> cette semaine</span
+            >
+            @if (freshCount()) {
+              <span class="fresh">🔥 {{ freshCount() }} nouvelle(s) aujourd’hui</span>
+            }
+          </div>
+          @if (c.me?.titles?.craft?.next; as next) {
+            <span class="heat-bar"><span [style.width.%]="c.share"></span></span>
+            <span class="muted small">{{ next.name }} à {{ next.min }} commande(s) livrée(s)</span>
+          }
+        </section>
+        <section class="tooltip craft-board">
+          <h4>Classement des artisans · cette semaine</h4>
+          @for (a of c.board; track a.userId; let i = $index) {
+            <div class="craft-row">
+              <span class="medal m{{ i }}">{{ i + 1 }}</span>
+              <app-avatar [src]="a.avatar" [name]="a.name" [size]="24" />
+              <span class="grow"
+                >{{ a.name }}
+                <span class="rank-title">{{ a.titles.craft.current?.name }}</span></span
+              >
+              <b>{{ a.deliveredSeason }}</b>
+            </div>
+          } @empty {
+            <p class="muted small">
+              Aucune commande livrée cette semaine. Le premier servi prend la tête !
+            </p>
+          }
+        </section>
+      </div>
+    }
 
     <form class="tooltip note-box" (ngSubmit)="saveNote()">
       <label class="field grow">
@@ -91,6 +137,29 @@ export class ArtisanPage {
 
   readonly tab = signal<'current' | 'past'>('current');
   readonly savingNote = signal(false);
+
+  // artisan sheet: my craft title and delivered orders, and this week's artisan ranking
+  private readonly gam = signal<AchievementsSummary | null>(null);
+  readonly craft = computed(() => {
+    const d = this.gam();
+    if (!d) return null;
+    const me = d.players.find((p) => p.userId === this.session.me()?.user?.id) ?? null;
+    const t = me?.titles.craft;
+    const from = t?.current?.min ?? 0;
+    const share = t?.next
+      ? Math.min(100, (100 * (t.value - from)) / (t.next.min - from || 1))
+      : 100;
+    const board = d.players
+      .filter((p) => p.deliveredSeason > 0)
+      .sort((a, b) => b.deliveredSeason - a.deliveredSeason)
+      .slice(0, 8);
+    return { me, share, board };
+  });
+  readonly freshCount = computed(
+    () =>
+      this.orders.receivedPending().filter((o) => Date.now() - o.createdAt < 24 * 3600 * 1000)
+        .length,
+  );
   noteText = '';
 
   readonly groups = computed(() => {
@@ -121,6 +190,13 @@ export class ArtisanPage {
   );
 
   constructor() {
+    const loadCraft = () =>
+      this.api
+        .achievements()
+        .then((d) => this.gam.set(d))
+        .catch(() => {});
+    loadCraft();
+    liveRefresh('achievements', loadCraft);
     effect(() => {
       if (this.session.userId()) this.noteText = untracked(this.session.me)?.note ?? '';
     });

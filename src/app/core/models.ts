@@ -131,6 +131,8 @@ export interface BankMember {
   name: string;
   title?: string | null;
   avatar?: string | null;
+  move: number | null; // places won (+) or lost (-) since last week
+  seasonNet: number;
   net: number;
   dep: number;
   wd: number;
@@ -151,6 +153,8 @@ export interface BankSummary {
   since: number | null;
   last: { at: number; name: string } | null;
   monthName: string;
+  seasonStart: number;
+  milestones: { percent: number; at: number | null }[];
   members: BankMember[];
   records: {
     deposit: (BankTx & { character: string }) | null;
@@ -180,6 +184,8 @@ export interface FollowMember {
   name: string;
   title?: string | null;
   avatar?: string | null;
+  move: number | null;
+  season: number;
   seconds: number;
   week: number;
   sessions: number;
@@ -194,6 +200,7 @@ export interface FollowMember {
 }
 export interface FollowSummary {
   total: number;
+  seasonStart: number;
   members: FollowMember[];
 }
 
@@ -217,12 +224,14 @@ export interface AchievementDef {
 }
 export interface AchievementsSummary {
   definitions: AchievementDef[];
-  titles: { bank: Title[]; follow: Title[] };
+  titles: { bank: Title[]; follow: Title[]; craft: Title[] };
   players: {
     userId: string;
     name: string;
     avatar?: string | null;
-    titles: { bank: TitleProgress; follow: TitleProgress };
+    delivered: number;
+    deliveredSeason: number;
+    titles: { bank: TitleProgress; follow: TitleProgress; craft: TitleProgress };
     achievements: {
       id: string;
       value: number;
@@ -231,4 +240,36 @@ export interface AchievementsSummary {
       unlockedAt: number | null;
     }[];
   }[];
+  seasonStart: number;
+  seasons: Season[];
+  challenges: Challenge[];
+}
+
+export interface SeasonWinner {
+  userId: string;
+  name: string;
+  value: number;
+}
+export interface Season {
+  week: number;
+  start: number;
+  end: number;
+  bank: SeasonWinner | null;
+  follow: SeasonWinner | null;
+  craft: SeasonWinner | null;
+}
+
+// Guild challenge, created by an admin (bot: gamification.js). Dates in seconds.
+export type ChallengeType = 'deposits' | 'deposited' | 'follow' | 'delivered';
+export interface Challenge {
+  id: string;
+  title: string;
+  type: ChallengeType;
+  target: number;
+  start: number;
+  end: number;
+  reward: string;
+  progress: number;
+  status: 'upcoming' | 'active' | 'done' | 'failed';
+  completedAt: number | null;
 }

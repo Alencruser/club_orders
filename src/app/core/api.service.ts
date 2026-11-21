@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import {
   AchievementsSummary,
   Artisan,
+  Challenge,
   BankSummary,
   Catalog,
   FeedbackItem,
@@ -98,6 +99,19 @@ export class ApiService {
 
   achievements() {
     return this.get<AchievementsSummary>('/api/achievements');
+  }
+
+  async challenges() {
+    return (await this.get<{ challenges: Challenge[] }>('/api/challenges')).challenges;
+  }
+
+  // Bot admins only
+  createChallenge(body: Omit<Challenge, 'id' | 'progress' | 'status' | 'completedAt'>) {
+    return this.post<{ challenge: Challenge }>('/api/challenges', body);
+  }
+
+  deleteChallenge(id: string) {
+    return this.post(`/api/challenges/${id}/delete`, {});
   }
 
   // Bot admins only (404 for anyone else)
