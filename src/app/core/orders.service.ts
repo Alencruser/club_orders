@@ -63,6 +63,10 @@ export class OrdersService {
 
   readonly placedPending = computed(() => this.placed().filter((o) => o.status === 'pending'));
   readonly placedPast = computed(() => this.placed().filter((o) => o.status !== 'pending'));
+  // placed orders done in the last 7 days: ready to pick up (home card, My orders « À récupérer »)
+  readonly placedReady = computed(() =>
+    this.placedPast().filter((o) => o.status === 'done' && Date.now() - o.updatedAt < 7 * 86400000),
+  );
   readonly receivedPending = computed(() => this.received().filter((o) => o.status === 'pending'));
   readonly receivedPast = computed(() => this.received().filter((o) => o.status !== 'pending'));
 

@@ -8,6 +8,17 @@ export interface Me {
   admin?: boolean; // bot admin: may share the guild cards on Discord
   feedbackAdmin?: boolean; // SITE_ADMINS: may read the hidden /feedback page
   siteAdmin?: boolean; // SITE_ADMINS: may use the hidden /admin page
+  // the player's addon and companion versions (bot: version-nag.js); null: not in the directory
+  versions?: MyVersions | null;
+}
+
+export interface MyVersions {
+  status: 'ok' | 'late' | 'unknown'; // unknown: never seen with a companion 0.7.5+
+  addon: string | null;
+  companion: string | null;
+  addonBehind: boolean;
+  companionBehind: boolean;
+  latest: { addon: string | null; companion: string | null; curseforge: string | null; companionUrl: string | null };
 }
 
 export interface Character {

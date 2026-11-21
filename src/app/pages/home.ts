@@ -313,12 +313,7 @@ export class HomePage {
     return b?.money ? Math.min(100, Math.floor((100 * b.money) / b.goal)) : 0;
   });
   // placed orders done in the last 7 days: ready to pick up
-  readonly ready = computed(
-    () =>
-      this.orders
-        .placedPast()
-        .filter((o) => o.status === 'done' && Date.now() - o.updatedAt < 7 * 86400000).length,
-  );
+  readonly ready = computed(() => this.orders.placedReady().length);
   readonly fresh = computed(
     () => this.orders.receivedPending().filter((o) => Date.now() - o.createdAt < 86400000).length,
   );

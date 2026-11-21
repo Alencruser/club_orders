@@ -238,8 +238,9 @@ export class ApiService {
     ).channels;
   }
 
-  share(card: string, channelId: string, text: string) {
-    return this.post<{ url: string }>('/api/share', { card, channelId, text });
+  // image: the card captured on screen (PNG data URL), or null for the bot's own drawing
+  share(card: string, channelId: string, text: string, image: string | null = null) {
+    return this.post<{ url: string }>('/api/share', { card, channelId, text, image });
   }
 
   loginUrl(back = location.pathname) {

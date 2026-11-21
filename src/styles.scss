@@ -784,6 +784,12 @@ input[type='checkbox'] {
   &.error {
     border-color: var(--red);
   }
+  &.warn {
+    border-color: #ffb347;
+    box-shadow:
+      0 0 0 1px #ffb347,
+      0 6px 18px rgba(0, 0, 0, 0.6);
+  }
 }
 
 // --- Suggestion / bug window, and the /feedback page ---
@@ -3446,4 +3452,87 @@ $da-frame-shadow:
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
+}
+
+// My orders: done orders to pick up (pages/my-orders.ts)
+.ready-orders {
+  margin-bottom: 1.2rem;
+  h2 {
+    margin: 0 0 0.2rem;
+  }
+}
+
+// --- Out-of-date reminder: Nono, the angry mascot, in a comic speech bubble (app.ts) ---
+.toast-nono {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.2rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
+  animation: nono-in 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
+  img {
+    flex: none;
+    width: 88px;
+    height: auto;
+    order: 0;
+    animation: nono-shake 0.5s 0.35s 2;
+  }
+  .bubble {
+    position: relative;
+    order: 1;
+    margin-bottom: 2.2rem;
+    padding: 0.7rem 0.9rem;
+    border: 3px solid #1a0b06;
+    border-radius: 18px;
+    background: #fff6df;
+    color: #1a0b06;
+    font-family: 'Sansita', Georgia, serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.25;
+    // the tail, pointing down-left at Nono
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      left: -16px;
+      bottom: 10px;
+      border-style: solid;
+    }
+    &::before {
+      border-width: 10px 18px 10px 0;
+      border-color: transparent #1a0b06 transparent transparent;
+    }
+    &::after {
+      left: -10px;
+      bottom: 12px;
+      border-width: 8px 13px 8px 0;
+      border-color: transparent #fff6df transparent transparent;
+    }
+  }
+}
+@keyframes nono-in {
+  from {
+    transform: translateY(20px) scale(0.85);
+    opacity: 0;
+  }
+}
+@keyframes nono-shake {
+  25% {
+    transform: rotate(-6deg);
+  }
+  75% {
+    transform: rotate(6deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-nono,
+  .toast-nono img {
+    animation: none;
+  }
 }

@@ -5,7 +5,8 @@ import { OrdersService } from '../core/orders.service';
 import { OrderRowComponent } from '../shared/order-row';
 import { MaterialsComponent } from '../shared/ui';
 
-// Orders placed: current ones (cancel) with the total of their materials, and past ones.
+// Orders placed: current ones (cancel) with the total of their materials, the ones done in the last 7
+// days to pick up (« À récupérer »), and past ones.
 @Component({
   selector: 'app-my-orders',
   imports: [RouterLink, OrderRowComponent, MaterialsComponent],
@@ -14,7 +15,7 @@ import { MaterialsComponent } from '../shared/ui';
       <h1 class="page-banner"><img src="/titles/commandes.webp" alt="Mes commandes" /></h1>
       <div class="tabs">
         <button type="button" [class.active]="tab() === 'current'" (click)="tab.set('current')">
-          En cours ({{ orders.placedPending().length }})
+          En cours ({{ orders.placedPending().length + orders.placedReady().length }})
         </button>
         <button type="button" [class.active]="tab() === 'past'" (click)="tab.set('past')">
           Historique ({{ orders.placedPast().length }})
@@ -25,6 +26,15 @@ import { MaterialsComponent } from '../shared/ui';
       <p class="refused">{{ error }}</p>
     }
     @if (tab() === 'current') {
+      @if (orders.placedReady().length) {
+        <section class="ready-orders">
+          <h2>📦 À récupérer ({{ orders.placedReady().length }})</h2>
+          <p class="muted small">Faites par l’artisan ces 7 derniers jours : passe les chercher.</p>
+          @for (o of orders.placedReady(); track o.id) {
+            <app-order [order]="o" side="buyer" />
+          }
+        </section>
+      }
       @if (orders.placedPending().length) {
         <div class="two-cols">
           <section>
@@ -38,7 +48,7 @@ import { MaterialsComponent } from '../shared/ui';
             <app-materials [list]="materials()" />
           </aside>
         </div>
-      } @else if (orders.loaded()) {
+      } @else if (orders.loaded() && !orders.placedReady().length) {
         <div class="tooltip empty">
           <p>Aucune commande en cours.</p>
           <a routerLink="/grimoire" class="btn gold">Ouvrir le grimoire</a>

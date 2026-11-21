@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FeedbackDialogComponent } from './shared/feedback-dialog';
 import { ApiService } from './core/api.service';
@@ -170,9 +170,17 @@ const LOGIN_ERRORS: Record<string, string> = {
 
     <div class="toasts" aria-live="polite">
       @for (t of toast.toasts(); track t.id) {
-        <button type="button" class="toast {{ t.kind }}" (click)="toast.dismiss(t.id)">
-          {{ t.text }}
-        </button>
+        @if (t.kind === 'warn') {
+          <!-- Nono, the angry mascot, says it in a comic speech bubble -->
+          <button type="button" class="toast-nono" (click)="toast.dismiss(t.id)" title="Fermer">
+            <img src="/nono-colere.webp" alt="Nono en colère" width="88" height="84" />
+            <span class="bubble">{{ t.text }}</span>
+          </button>
+        } @else {
+          <button type="button" class="toast {{ t.kind }}" (click)="toast.dismiss(t.id)">
+            {{ t.text }}
+          </button>
+        }
       }
     </div>
   `,
@@ -205,13 +213,40 @@ export class App {
       if (e instanceof NavigationEnd) {
         this.theme.set(this.themeOf(e.urlAfterRedirects));
         this.countFeedback();
+        this.versionReminder();
       }
+    });
+    // first page: the reminder waits for /api/me
+    effect(() => {
+      if (this.session.me()?.versions) untracked(() => this.versionReminder());
     });
     effect(() => {
       if (this.session.me()?.feedbackAdmin) this.countFeedback();
     });
     this.session.load();
     refreshOrders(this.session, this.orders, this.data);
+  }
+
+  // Out-of-date addon or companion: a reminder on every page until the player updates (the bot sees
+  // their versions through the companion 0.7.5+; unknown usually means an older companion)
+  private versionReminder() {
+    const v = this.session.me()?.versions;
+    if (!v || v.status === 'ok') return;
+    if (v.status === 'unknown') {
+      this.toast.warn(
+        'Grrr ! Je ne vois pas tes versions : ton compagnon est trop vieux (ou éteint). Mets-le à jour : menu du compagnon (icône près de l’horloge) > Check for updates !',
+      );
+      return;
+    }
+    const parts = [
+      v.addonBehind
+        ? `l’addon (v${v.addon ?? '?'} → v${v.latest.addon}) : mets-le à jour dans l’app CurseForge`
+        : null,
+      v.companionBehind
+        ? `le compagnon (${v.companion ?? '?'} → ${v.latest.companion}) : menu du compagnon > Check for updates`
+        : null,
+    ].filter(Boolean);
+    if (parts.length) this.toast.warn(`Grrr ! T’es pas à jour : ${parts.join(' ; ')} !`);
   }
 
   private async countFeedback() {
