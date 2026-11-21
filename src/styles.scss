@@ -3050,3 +3050,19 @@ $da-frame-shadow:
   gap: 1.2rem;
   min-width: 0;
 }
+
+// Sticky side columns (grimoire index, members of the trophies page, order asides): the frames set
+// position: relative, which turned their « top: 4.5rem » into a permanent offset (the column started
+// 72px lower than the middle). They stay sticky: aligned with the middle, still visible when scrolling.
+.theme-forge .book-index.tooltip,
+.theme-forge .trophy-players.tooltip,
+.theme-forge .two-cols > aside.tooltip {
+  position: sticky;
+}
+@media (max-width: 900px) {
+  .theme-forge .book-index.tooltip,
+  .theme-forge .trophy-players.tooltip,
+  .theme-forge .two-cols > aside.tooltip {
+    position: static;
+  }
+}
