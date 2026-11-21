@@ -238,7 +238,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
               }
             </div>
             @if (d.war.count) {
-              <h4>🛡️ Effort de guerre</h4>
+              <h4>🛡️ Effort de guilde</h4>
               @if (d.war.out) {
                 <div class="record">
                   <span class="muted">Sorties de guilde</span> <app-money [copper]="d.war.out" />
