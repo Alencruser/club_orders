@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FeedbackDialogComponent } from './shared/feedback-dialog';
 import { ApiService } from './core/api.service';
+import { MyVersions } from './core/models';
 import { CartService } from './core/cart.service';
 import { DataService } from './core/data.service';
 import { OrdersService, refreshOrders } from './core/orders.service';
@@ -213,7 +214,7 @@ export class App {
       if (e instanceof NavigationEnd) {
         this.theme.set(this.themeOf(e.urlAfterRedirects));
         this.countFeedback();
-        this.versionReminder();
+        this.refreshVersions();
       }
     });
     // first page: the reminder waits for /api/me
@@ -227,10 +228,27 @@ export class App {
     refreshOrders(this.session, this.orders, this.data);
   }
 
+  // The player's versions, re-read on every page change (at most every 10 s): Nono calms down as soon as
+  // the companion has sent its new version, without a reload
+  private versionsAt = 0;
+  private readonly versions = signal<MyVersions | null | undefined>(undefined);
+  private async refreshVersions() {
+    if (this.session.me() && Date.now() - this.versionsAt > 10_000) {
+      this.versionsAt = Date.now();
+      try {
+        this.versions.set(await this.api.myVersions());
+      } catch {
+        // keep what we had
+      }
+    }
+    this.versionReminder();
+  }
+
   // Out-of-date addon or companion: a reminder on every page until the player updates (the bot sees
   // their versions through the companion 0.7.5+; unknown usually means an older companion)
   private versionReminder() {
-    const v = this.session.me()?.versions;
+    const fresh = this.versions();
+    const v = fresh === undefined ? this.session.me()?.versions : fresh;
     if (!v || v.status === 'ok') return;
     if (v.status === 'unknown') {
       this.toast.warn(

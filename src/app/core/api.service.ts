@@ -18,6 +18,7 @@ import {
   FollowSummary,
   HomeData,
   Me,
+  MyVersions,
   Order,
   Tooltip,
 } from './models';
@@ -29,6 +30,11 @@ export class ApiService {
 
   me() {
     return this.get<Me>('/api/me');
+  }
+
+  // the player's addon and companion versions (Nono's reminder), re-read on every page change
+  async myVersions() {
+    return (await this.get<{ versions: MyVersions | null }>('/api/me/versions')).versions;
   }
 
   catalog() {
