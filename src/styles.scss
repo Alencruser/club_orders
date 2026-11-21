@@ -3290,3 +3290,48 @@ $da-frame-shadow:
     border-bottom: 1px solid rgba(240, 196, 110, 0.2);
   }
 }
+.admin-versions-head p {
+  margin: 0 0 0.4rem;
+}
+.admin-versions-send {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  select {
+    min-width: 12rem;
+  }
+}
+.admin-versions {
+  margin-top: 0;
+  .pick {
+    width: 1%;
+  }
+  .who {
+    img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 0.4rem;
+    }
+    span {
+      margin-left: 0.4rem;
+    }
+  }
+  tr.ok {
+    opacity: 0.7;
+  }
+}
+@media (max-width: 700px) {
+  .admin-versions tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.6rem;
+    border-bottom: 1px solid rgba(240, 196, 110, 0.2);
+  }
+  .admin-versions td {
+    border: 0;
+    padding: 0.25rem 0.2rem;
+  }
+}

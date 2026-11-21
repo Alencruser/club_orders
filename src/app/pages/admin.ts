@@ -4,11 +4,18 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, errorText } from '../core/api.service';
-import { AdminAnomaly, AdminChannel, AdminSlot, AdminState } from '../core/models';
+import {
+  AdminAnomaly,
+  AdminChannel,
+  AdminSlot,
+  AdminState,
+  AdminVersionMember,
+  AdminVersions,
+} from '../core/models';
 import { ToastService } from '../core/toast.service';
 
-type Tab = 'status' | 'channels' | 'anomalies';
-const TABS: Tab[] = ['status', 'channels', 'anomalies'];
+type Tab = 'status' | 'channels' | 'anomalies' | 'versions';
+const TABS: Tab[] = ['status', 'channels', 'anomalies', 'versions'];
 const SEVERITY = { red: '🔴', orange: '🟠', benign: '⚪' } as const;
 const AUTO_REFRESH_MS = 60 * 1000;
 
@@ -41,6 +48,12 @@ const AUTO_REFRESH_MS = 60 * 1000;
               <span class="badge" [class.dim]="!s.anomalies.counts.red">{{
                 s.anomalies.items.length
               }}</span>
+            }
+          </button>
+          <button type="button" [class.active]="tab() === 'versions'" (click)="go('versions')">
+            📦 Versions
+            @if (behind().length) {
+              <span class="badge dim">{{ behind().length }}</span>
             }
           </button>
           <button type="button" disabled title="Bientôt : prochaine étape">🗂️ Données</button>
@@ -349,6 +362,85 @@ const AUTO_REFRESH_MS = 60 * 1000;
           <p class="admin-ok">✅ Rien à signaler</p>
         }
       }
+
+      <!-- 📦 Versions -->
+      @if (tab() === 'versions') {
+        @if (versions(); as v) {
+          <section class="tooltip admin-versions-head">
+            <p>
+              Dernières versions : addon <b>{{ v.latest.addon ? 'v' + v.latest.addon : '?' }}</b> ·
+              compagnon <b>{{ v.latest.companion ?? '?' }}</b>
+            </p>
+            <p class="muted small">
+              Le compagnon 0.7.5+ envoie ses versions toutes les 2 minutes. ❓ Inconnu : jamais vu
+              avec ce compagnon (trop ancien, ou pas de compagnon du tout). Les retardataires et les
+              inconnus sont cochés d'office.
+            </p>
+            <div class="admin-versions-send">
+              <select [(ngModel)]="nagChannel" aria-label="Salon">
+                @for (c of writableChannels(); track c.id) {
+                  <option [value]="c.id">#{{ c.name }}{{ c.parent ? ' · ' + c.parent : '' }}</option>
+                }
+              </select>
+              <button type="button" class="btn gold" [disabled]="!picked().length || nagging()" (click)="ping('share')">
+                📢 Partager ({{ picked().length }})
+              </button>
+              <button type="button" class="btn danger" [disabled]="!picked().length || nagging()" (click)="ping('roast')">
+                🤬 Insulter ({{ picked().length }})
+              </button>
+            </div>
+          </section>
+          <section class="tooltip">
+            <table class="admin-table admin-versions">
+              <tbody>
+                @for (m of v.members; track m.userId) {
+                  <tr [class]="m.status">
+                    <td class="pick">
+                      <input
+                        type="checkbox"
+                        [checked]="isPicked(m)"
+                        (change)="togglePick(m)"
+                        [attr.aria-label]="'Taguer ' + m.name"
+                      />
+                    </td>
+                    <td class="who">
+                      @if (m.avatar) {
+                        <img [src]="m.avatar" alt="" />
+                      }
+                      <b>{{ m.name }}</b>
+                      <span class="muted small">{{ m.battletags.join(', ') }}</span>
+                    </td>
+                    <td>
+                      @switch (m.status) {
+                        @case ('ok') {
+                          <span class="good">✅ à jour</span>
+                        }
+                        @case ('late') {
+                          <span class="bad">⚠️ en retard</span>
+                        }
+                        @default {
+                          <span class="muted">❓ inconnu</span>
+                        }
+                      }
+                    </td>
+                    <td [class.bad]="isOld(m.addon, v.latest.addon)">
+                      addon {{ m.addon ? 'v' + m.addon : '?' }}
+                    </td>
+                    <td [class.bad]="isOld(m.companion, v.latest.companion)">
+                      compagnon {{ m.companion ?? '?' }}
+                    </td>
+                    <td class="muted small">{{ m.at ? since(m.at * 1000, now()) : 'jamais vu' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td class="muted">Personne dans l'annuaire des battletags.</td></tr>
+                }
+              </tbody>
+            </table>
+          </section>
+        } @else {
+          <p class="center muted">Chargement des versions…</p>
+        }
+      }
     } @else if (error(); as e) {
       <section class="tooltip center">
         <p>❌ Le bot n'a pas pu lire le tableau de bord : {{ e }}</p>
@@ -376,6 +468,17 @@ export class AdminPage {
   readonly code = signal<string | null>(null);
   readonly severity = signal<'all' | 'red' | 'orange'>('all');
   readonly open = signal(new Set<string>());
+  readonly versions = signal<AdminVersions | null>(null);
+  readonly unpicked = signal(new Set<string>()); // behind but unchecked
+  readonly extraPicked = signal(new Set<string>()); // up to date but checked
+  readonly nagging = signal(false);
+  nagChannel = '';
+  readonly now = () => Date.now(); // versions: seen times are real time
+  readonly behind = computed(() => (this.versions()?.members ?? []).filter((m) => m.status !== 'ok'));
+  readonly picked = computed(() =>
+    (this.versions()?.members ?? []).filter((m) => this.isPicked(m)).map((m) => m.userId),
+  );
+  readonly writableChannels = computed(() => this.channels().filter((c) => c.botCanWrite));
 
   readonly editableSlots = computed(() => (this.state()?.slots ?? []).filter((s) => !s.readOnly));
   readonly readOnlySlots = computed(() => (this.state()?.slots ?? []).filter((s) => s.readOnly));
@@ -402,7 +505,13 @@ export class AdminPage {
   constructor() {
     this.load();
     this.api.adminChannels().then(
-      (list) => this.channels.set(list),
+      (list) => {
+        this.channels.set(list);
+        this.nagChannel ||=
+          list.find((c) => c.botCanWrite && /g[ée]n[ée]ral|annonce|guilde/i.test(c.name))?.id ??
+          list.find((c) => c.botCanWrite)?.id ??
+          '';
+      },
       () => {},
     );
     const timer = setInterval(() => {
@@ -425,6 +534,7 @@ export class AdminPage {
     this.loading.set(true);
     try {
       this.state.set(await this.api.adminState());
+      this.loadVersions();
       this.error.set(null);
     } catch (err) {
       this.error.set(errorText(err));
@@ -534,6 +644,58 @@ export class AdminPage {
       this.toast.error(`❌ ${errorText(err)}`);
     } finally {
       this.saving.set(null);
+    }
+  }
+
+  // --- Versions ---
+
+  async loadVersions() {
+    try {
+      this.versions.set(await this.api.adminVersions());
+    } catch {
+      // the other tabs still work
+    }
+  }
+
+  isPicked(m: AdminVersionMember) {
+    return m.status === 'ok' ? this.extraPicked().has(m.userId) : !this.unpicked().has(m.userId);
+  }
+
+  togglePick(m: AdminVersionMember) {
+    const set = m.status === 'ok' ? this.extraPicked : this.unpicked;
+    set.update((s) => {
+      const next = new Set(s);
+      if (!next.delete(m.userId)) next.add(m.userId);
+      return next;
+    });
+  }
+
+  isOld(mine: string | null, latest: string | null) {
+    if (!latest) return false;
+    if (!mine) return true;
+    const a = mine.split('.').map(Number);
+    const b = latest.split('.').map(Number);
+    for (let i = 0; i < 3; i++) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) < (b[i] ?? 0);
+    return false;
+  }
+
+  async ping(mode: 'share' | 'roast') {
+    const channel = this.channels().find((c) => c.id === this.nagChannel);
+    if (!channel) {
+      this.toast.error('❌ Choisis un salon.');
+      return;
+    }
+    const n = this.picked().length;
+    const what = mode === 'roast' ? '🤬 Insulter' : '📢 Rappeler la mise à jour à';
+    if (!confirm(`${what} ${n} membre(s) dans #${channel.name} ? Ils seront tagués.`)) return;
+    this.nagging.set(true);
+    try {
+      const r = await this.api.adminVersionsPing(channel.id, this.picked(), mode);
+      this.toast.ok(`${mode === 'roast' ? '🤬' : '📢'} Posté dans #${channel.name}, ${r.tagged} tagué(s).`);
+    } catch (err) {
+      this.toast.error(`❌ ${errorText(err)}`);
+    } finally {
+      this.nagging.set(false);
     }
   }
 

@@ -416,6 +416,23 @@ export interface AdminState {
   };
 }
 
+// 📦 Versions tab: who is behind on the addon or the companion (bot: version-nag.js). at in seconds.
+export interface AdminVersionMember {
+  userId: string;
+  name: string;
+  avatar: string | null;
+  battletags: string[];
+  addon: string | null;
+  companion: string | null;
+  at: number | null;
+  status: 'ok' | 'late' | 'unknown';
+}
+
+export interface AdminVersions {
+  latest: { addon: string | null; companion: string | null; curseforge: string | null; companionUrl: string | null };
+  members: AdminVersionMember[];
+}
+
 export interface AdminChannel {
   id: string;
   name: string;

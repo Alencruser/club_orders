@@ -5,6 +5,7 @@ import {
   AchievementsSummary,
   AdminChannel,
   AdminState,
+  AdminVersions,
   Artisan,
   Challenge,
   BankSummary,
@@ -124,6 +125,15 @@ export class ApiService {
 
   adminClearAnomalies() {
     return this.post<{ cleared: number }>('/api/admin/anomalies/clear', {});
+  }
+
+  adminVersions() {
+    return this.get<AdminVersions>('/api/admin/versions');
+  }
+
+  // mode share: friendly reminder; roast: with a teasing line. Tags the chosen members.
+  adminVersionsPing(channelId: string, userIds: string[], mode: 'share' | 'roast') {
+    return this.post<{ url: string; tagged: number }>('/api/admin/versions/ping', { channelId, userIds, mode });
   }
 
   adminDeleteOrphan(id: string) {
