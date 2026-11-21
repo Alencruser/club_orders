@@ -1,6 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ApiService, errorText } from '../core/api.service';
-import { BankMember, BankSummary } from '../core/models';
+import { BankLine, BankMember, BankSummary } from '../core/models';
+import { SessionService } from '../core/session.service';
+import { ToastService } from '../core/toast.service';
 import { ShareButtonComponent } from '../shared/share-button';
 import {
   AvatarComponent,
@@ -234,10 +236,60 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
             </p>
           </section>
           <section class="tooltip">
-            <h2>Dernières transactions</h2>
+            <div class="tx-head">
+              <h2>{{ manage() ? 'Toutes les lignes' : 'Dernières transactions' }}</h2>
+              @if (siteAdmin()) {
+                <button type="button" class="btn ghost" (click)="toggleManage()">
+                  {{ manage() ? '✓ Terminé' : '⚙️ Gérer les lignes' }}
+                </button>
+              }
+            </div>
+            @if (manage()) {
+              <p class="muted small">
+                🛡️ Effort de guilde : compte pour la guilde, pas pour le joueur. 🚫 Ignorer : ne
+                compte nulle part (soldes, records, séries, hauts faits). Recliquer annule.
+              </p>
+              <ul class="tx-list tx-manage">
+                @for (t of lines()?.slice(0, linesShown()) ?? []; track t.id) {
+                  <li [class.war]="t.guild" [class.ignored]="t.ignored">
+                    <span class="muted small">#{{ t.id }}</span>
+                    <span class="grow">{{ t.character }}</span>
+                    <app-money [copper]="t.type === 'deposit' ? t.copper : -t.copper" [sign]="true" />
+                    <span class="muted small">{{ dateTime(t.at) }}</span>
+                    <button
+                      type="button"
+                      class="btn ghost tx-flag"
+                      [class.on]="t.guild"
+                      [disabled]="busy() === t.id"
+                      [title]="t.guild ? 'Retirer « effort de guilde »' : 'Marquer « effort de guilde »'"
+                      (click)="flag(t, { guild: !t.guild })"
+                    >
+                      🛡️
+                    </button>
+                    <button
+                      type="button"
+                      class="btn ghost tx-flag"
+                      [class.on]="t.ignored"
+                      [disabled]="busy() === t.id"
+                      [title]="t.ignored ? 'Rétablir : la ligne compte de nouveau' : 'Ignorer : ne compte nulle part'"
+                      (click)="flag(t, { ignored: !t.ignored })"
+                    >
+                      {{ t.ignored ? '↩' : '🚫' }}
+                    </button>
+                  </li>
+                } @empty {
+                  <li class="muted">{{ lines() ? 'Aucune transaction.' : 'Chargement…' }}</li>
+                }
+              </ul>
+              @if ((lines()?.length ?? 0) > linesShown()) {
+                <button type="button" class="btn ghost" (click)="linesShown.set(linesShown() + 50)">
+                  Voir 50 de plus ({{ (lines()?.length ?? 0) - linesShown() }} restantes)
+                </button>
+              }
+            } @else {
             <ul class="tx-list">
               @for (t of d.recent.slice(0, 15); track t.id) {
-                <li [class.war]="t.guild">
+                <li [class.war]="t.guild" [class.ignored]="t.ignored">
                   <span
                     class="tx-arrow"
                     [class.dep]="t.type === 'deposit'"
@@ -254,6 +306,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
                 <li class="muted">Aucune transaction.</li>
               }
             </ul>
+            }
           </section>
         </div>
 
@@ -346,8 +399,16 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
 })
 export class BankPage {
   private api = inject(ApiService);
+  private session = inject(SessionService);
+  private toast = inject(ToastService);
 
   readonly data = signal<BankSummary | null>(null);
+  // SITE_ADMINS: every line, effort de guilde / ignored one by one
+  readonly siteAdmin = computed(() => Boolean(this.session.me()?.siteAdmin));
+  readonly manage = signal(false);
+  readonly lines = signal<BankLine[] | null>(null);
+  readonly linesShown = signal(50);
+  readonly busy = signal<number | null>(null);
   readonly error = signal<string | null>(null);
   readonly ranking = signal<Ranking>('net');
   readonly open = signal<string | null>(null);
@@ -393,6 +454,30 @@ export class BankPage {
         requestAnimationFrame(() => setTimeout(() => this.shown.set(true), 50));
       })
       .catch((err) => this.error.set(`Banque indisponible : ${errorText(err)}`));
+  }
+
+  async toggleManage() {
+    this.manage.set(!this.manage());
+    if (!this.manage()) return;
+    try {
+      this.lines.set(await this.api.bankLines());
+    } catch (err) {
+      this.toast.error(`❌ ${errorText(err)}`);
+      this.manage.set(false);
+    }
+  }
+
+  async flag(t: BankLine, flags: { guild?: boolean; ignored?: boolean }) {
+    this.busy.set(t.id);
+    try {
+      const line = await this.api.bankLineFlags(t.id, flags);
+      this.lines.update((list) => (list ?? []).map((x) => (x.id === line.id ? line : x)));
+      this.load(); // balances, records…
+    } catch (err) {
+      this.toast.error(`❌ ${errorText(err)}`);
+    } finally {
+      this.busy.set(null);
+    }
   }
 
   value(m: BankMember) {

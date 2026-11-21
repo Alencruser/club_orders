@@ -3335,3 +3335,40 @@ $da-frame-shadow:
     padding: 0.25rem 0.2rem;
   }
 }
+
+// --- Bank lines management (pages/bank.ts, SITE_ADMINS) ---
+.tx-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.tx-list li.ignored {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.tx-manage {
+  max-height: 32rem;
+  overflow-y: auto;
+  li {
+    gap: 0.5rem;
+  }
+  li.ignored {
+    opacity: 1; // the ↩ button stays readable
+    > :not(.tx-flag) {
+      opacity: 0.45;
+    }
+  }
+}
+.tx-flag {
+  padding: 0.15rem 0.45rem;
+  filter: grayscale(1);
+  opacity: 0.55;
+  text-decoration: none;
+  &.on {
+    filter: none;
+    opacity: 1;
+    box-shadow: 0 0 0 2px #f0c46e;
+  }
+}

@@ -179,7 +179,19 @@ export interface BankSummary {
     character: string;
     name: string;
     guild: boolean;
+    ignored?: boolean; // an admin ignored it: counts nowhere
   }[];
+}
+
+// One guild bank line for the admins (SITE_ADMINS, /api/bank/lines). at in seconds.
+export interface BankLine {
+  id: number;
+  at: number;
+  type: 'deposit' | 'withdraw';
+  copper: number;
+  character: string;
+  guild: boolean; // effort de guilde: not counted for the player
+  ignored: boolean; // counts nowhere
 }
 
 // Follow time (bot: follow.js, /api/follow). Durations in seconds.

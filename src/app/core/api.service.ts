@@ -8,6 +8,7 @@ import {
   AdminVersions,
   Artisan,
   Challenge,
+  BankLine,
   BankSummary,
   Catalog,
   FeedbackItem,
@@ -125,6 +126,15 @@ export class ApiService {
 
   adminClearAnomalies() {
     return this.post<{ cleared: number }>('/api/admin/anomalies/clear', {});
+  }
+
+  // Guild bank lines one by one: SITE_ADMINS only (404 for anyone else)
+  async bankLines() {
+    return (await this.get<{ lines: BankLine[] }>('/api/bank/lines')).lines;
+  }
+
+  async bankLineFlags(id: number, flags: { guild?: boolean; ignored?: boolean }) {
+    return (await this.post<{ line: BankLine }>(`/api/bank/lines/${id}`, flags)).line;
   }
 
   adminVersions() {
