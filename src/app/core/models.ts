@@ -6,6 +6,7 @@ export interface Me {
   characters: Character[];
   note: string | null;
   admin?: boolean; // bot admin: may share the guild cards on Discord
+  feedbackAdmin?: boolean; // FEEDBACK_ADMINS: may read the hidden /feedback page
 }
 
 export interface Character {
@@ -116,6 +117,10 @@ export interface FeedbackItem {
   userId: string;
   name: string;
   status: 'new' | 'done';
+  up: number; // 👍 votes on Discord
+  down: number;
+  score: number; // up - down
+  links: string[]; // Discord messages where it was shared
 }
 
 // Guild bank (bot: bank.js, /api/bank). Amounts in copper, dates in seconds.

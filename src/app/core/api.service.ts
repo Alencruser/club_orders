@@ -73,7 +73,7 @@ export class ApiService {
     return this.post('/api/feedback', { type, text, page });
   }
 
-  // Only for BOT_ADMINS accounts: anyone else gets a 404
+  // Only for FEEDBACK_ADMINS accounts: anyone else gets a 404
   async feedbackList() {
     return (await this.get<{ items: FeedbackItem[] }>('/api/feedback')).items;
   }
@@ -84,6 +84,19 @@ export class ApiService {
 
   feedbackDelete(id: string) {
     return this.post(`/api/feedback/${id}/delete`, {});
+  }
+
+  async feedbackChannels() {
+    return (
+      await this.get<{ channels: { id: string; name: string; parent: string | null }[] }>(
+        '/api/feedback/channels',
+      )
+    ).channels;
+  }
+
+  // Posts it on Discord with 👍 / 👎 buttons and a thread; returns the message link
+  feedbackShare(id: string, channelId: string) {
+    return this.post<{ url: string }>(`/api/feedback/${id}/share`, { channelId });
   }
 
   logout() {

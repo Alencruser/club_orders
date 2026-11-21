@@ -837,6 +837,19 @@ input[type='checkbox'] {
   white-space: pre-wrap;
   margin: 0.6rem 0 0;
 }
+.feedback-score {
+  font-weight: 700;
+  white-space: nowrap;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 196, 110, 0.35);
+  &.pos {
+    color: var(--green);
+  }
+  &.neg {
+    color: #ff6b5b;
+  }
+}
 .kind {
   font-weight: 700;
   &.bug {

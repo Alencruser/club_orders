@@ -20,7 +20,7 @@ export const routes: Routes = [
   { path: 'suivi', component: FollowPage, title: 'Suivi · Bagarre club' },
   { path: 'hauts-faits', component: TrophiesPage, title: 'Hauts faits · Bagarre club' },
   { path: 'defis', component: ChallengesPage, title: 'Défis · Bagarre club' },
-  // hidden: no link anywhere, and the bot only answers BOT_ADMINS accounts
+  // hidden: no link anywhere, and the bot only answers FEEDBACK_ADMINS accounts
   { path: 'feedback', component: FeedbackPage, title: 'Retours · Bagarre club' },
   { path: '**', redirectTo: '' },
 ];

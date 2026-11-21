@@ -1,16 +1,21 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, errorText } from '../core/api.service';
 import { FeedbackItem } from '../core/models';
 import { ToastService } from '../core/toast.service';
 
-// Hidden page (no link anywhere): suggestions and bugs sent by players. The bot only answers BOT_ADMINS
-// accounts; anyone else is sent back to the book, as for an unknown address.
+type Channel = { id: string; name: string; parent: string | null };
+
+// Hidden page (no link anywhere): suggestions and bugs sent by players. The bot only answers
+// FEEDBACK_ADMINS accounts; anyone else is sent back home, as for an unknown address.
+// « Partager » posts one on Discord: the members vote 👍 / 👎 there and debate in its thread; the
+// scores come back here.
 @Component({
   selector: 'app-feedback',
-  imports: [DatePipe],
+  imports: [DatePipe, FormsModule],
   template: `
     @if (items(); as list) {
       <div class="page-head">
@@ -26,6 +31,14 @@ import { ToastService } from '../core/toast.service';
             Tout ({{ list.length }})
           </button>
         </div>
+        <div class="tabs">
+          <button type="button" [class.active]="sort() === 'date'" (click)="sort.set('date')">
+            Plus récents
+          </button>
+          <button type="button" [class.active]="sort() === 'score'" (click)="sort.set('score')">
+            Mieux notés
+          </button>
+        </div>
       </div>
       @for (f of shown(); track f.id) {
         <article class="tooltip feedback" [class.closed]="f.status === 'done'">
@@ -39,6 +52,20 @@ import { ToastService } from '../core/toast.service';
               <code class="small muted">{{ f.page }}</code>
             }
             <span class="grow"></span>
+            @if (f.links.length) {
+              <span
+                class="feedback-score"
+                [class.pos]="f.score > 0"
+                [class.neg]="f.score < 0"
+                title="Votes sur Discord"
+              >
+                👍 {{ f.up }} · 👎 {{ f.down }}
+              </span>
+              <a class="btn ghost" [href]="f.links[f.links.length - 1]" target="_blank" rel="noopener">
+                💬 Débat
+              </a>
+            }
+            <button type="button" class="btn ghost" (click)="openShare(f)">📤 Partager</button>
             <button type="button" class="btn ghost" (click)="toggle(f)">
               {{ f.status === 'done' ? '↩ À revoir' : '✓ Traité' }}
             </button>
@@ -52,6 +79,44 @@ import { ToastService } from '../core/toast.service';
     } @else {
       <p class="center muted">Chargement…</p>
     }
+
+    @if (sharing(); as f) {
+      <div class="overlay" (click)="sharing.set(null)">
+        <form class="tooltip dialog" (click)="$event.stopPropagation()" (ngSubmit)="share(f)">
+          <h2>Partager sur Discord</h2>
+          <p class="muted small">
+            Le bot poste {{ f.type === 'bug' ? 'ce bug' : 'cette suggestion' }} dans le salon choisi,
+            avec {{ f.name }} mentionné (sans notification), les boutons 👍 / 👎 pour voter et un fil
+            pour en débattre.
+          </p>
+          @if (channels(); as list) {
+            <label class="field">
+              Salon
+              <select name="channel" [(ngModel)]="channelId" required>
+                @for (c of list; track c.id) {
+                  <option [value]="c.id">
+                    #{{ c.name }}{{ c.parent ? ' · ' + c.parent : '' }}
+                  </option>
+                }
+              </select>
+            </label>
+          } @else {
+            <p class="muted">Chargement des salons…</p>
+          }
+          @if (f.links.length) {
+            <p class="muted small">
+              Déjà partagé {{ f.links.length }} fois : les votes s'additionnent.
+            </p>
+          }
+          <div class="dialog-actions">
+            <button type="button" class="btn ghost" (click)="sharing.set(null)">Annuler</button>
+            <button class="btn gold" [disabled]="sending() || !channelId">
+              {{ sending() ? 'Envoi…' : 'Partager' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    }
   `,
 })
 export class FeedbackPage {
@@ -61,9 +126,20 @@ export class FeedbackPage {
 
   readonly items = signal<FeedbackItem[] | null>(null);
   readonly filter = signal<'new' | 'done' | 'all'>('new');
-  readonly shown = computed(() =>
-    (this.items() ?? []).filter((f) => this.filter() === 'all' || f.status === this.filter()),
-  );
+  readonly sort = signal<'date' | 'score'>('date');
+  readonly shown = computed(() => {
+    const list = (this.items() ?? []).filter(
+      (f) => this.filter() === 'all' || f.status === this.filter(),
+    );
+    return this.sort() === 'score'
+      ? [...list].sort((a, b) => b.score - a.score || b.up - a.up || b.createdAt - a.createdAt)
+      : list;
+  });
+
+  readonly sharing = signal<FeedbackItem | null>(null);
+  readonly sending = signal(false);
+  readonly channels = signal<Channel[] | null>(null);
+  channelId = '';
 
   constructor() {
     this.load();
@@ -99,6 +175,36 @@ export class FeedbackPage {
       this.items.update((list) => (list ?? []).filter((x) => x.id !== f.id));
     } catch (err) {
       this.toast.error(`❌ ${errorText(err)}`);
+    }
+  }
+
+  async openShare(f: FeedbackItem) {
+    this.sharing.set(f);
+    if (this.channels()) return;
+    try {
+      const list = await this.api.feedbackChannels();
+      this.channels.set(list);
+      this.channelId ||=
+        list.find((c) => /sugg|feedback|id[ée]e|retour/i.test(c.name))?.id ?? list[0]?.id ?? '';
+    } catch (err) {
+      this.toast.error(`❌ ${errorText(err)}`);
+      this.sharing.set(null);
+    }
+  }
+
+  async share(f: FeedbackItem) {
+    this.sending.set(true);
+    try {
+      const { url } = await this.api.feedbackShare(f.id, this.channelId);
+      this.items.update((list) =>
+        (list ?? []).map((x) => (x.id === f.id ? { ...x, links: [...x.links, url] } : x)),
+      );
+      this.toast.ok('📤 Partagé sur Discord');
+      this.sharing.set(null);
+    } catch (err) {
+      this.toast.error(`❌ ${errorText(err)}`);
+    } finally {
+      this.sending.set(false);
     }
   }
 }
