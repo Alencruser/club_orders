@@ -171,19 +171,24 @@ const LOGIN_ERRORS: Record<string, string> = {
 
     <div class="toasts" aria-live="polite">
       @for (t of toast.toasts(); track t.id) {
-        @if (t.kind === 'warn') {
-          <!-- Nono, the angry mascot, says it in a comic speech bubble -->
-          <button type="button" class="toast-nono" (click)="toast.dismiss(t.id)" title="Fermer">
-            <img src="/nono-colere.webp" alt="Nono en colère" width="88" height="84" />
-            <span class="bubble">{{ t.text }}</span>
-          </button>
-        } @else {
+        @if (t.kind !== 'warn') {
           <button type="button" class="toast {{ t.kind }}" (click)="toast.dismiss(t.id)">
             {{ t.text }}
           </button>
         }
       }
     </div>
+    <!-- Nono, the angry mascot, in the middle of the screen on a comic burst: hard to miss -->
+    @for (t of toast.toasts(); track t.id) {
+      @if (t.kind === 'warn') {
+        <div class="nono-stage" aria-live="assertive">
+          <button type="button" class="toast-nono" (click)="toast.dismiss(t.id)" title="Fermer">
+            <img src="/nono-colere.webp" alt="Nono en colère" width="190" height="182" />
+            <span class="bubble">{{ t.text }}</span>
+          </button>
+        </div>
+      }
+    }
   `,
 })
 export class App {
