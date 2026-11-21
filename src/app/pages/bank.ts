@@ -58,16 +58,19 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
           <div class="goal-head">
             <div>
               <h2>Objectif : onglet de banque <app-share card="goal" /></h2>
-              <p class="muted small">
+              <p class="goal-have">
+                Déjà en banque : <app-money [copper]="d.money" />
                 @if (left() > 0) {
-                  Encore <app-money [copper]="left()" /> pour atteindre
-                  <app-money [copper]="d.goal" />
+                  <span class="muted">· encore <app-money [copper]="left()" /></span>
                 } @else {
-                  Objectif atteint, bravo à tous !
+                  <span class="muted">· objectif atteint, bravo à tous !</span>
                 }
               </p>
             </div>
-            <app-money [copper]="d.money" [big]="true" />
+            <div class="goal-target">
+              <span class="goal-target-label">Objectif</span>
+              <app-money [copper]="d.goal" [big]="true" />
+            </div>
           </div>
           <div
             class="goal-bar"
