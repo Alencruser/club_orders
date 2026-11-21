@@ -14,7 +14,9 @@ import { IconComponent, MaterialsComponent, classColor } from '../shared/ui';
   selector: 'app-cart',
   imports: [FormsModule, RouterLink, IconComponent, MaterialsComponent],
   template: `
-    <h1 class="page-banner"><img src="/titles/panier.webp" alt="Panier" /></h1>
+    <div class="page-head">
+      <h1 class="page-banner"><img src="/titles/panier.webp" alt="Panier" /></h1>
+    </div>
     @if (!cart.lines().length) {
       <div class="tooltip empty">
         <p>Ton panier est vide.</p>

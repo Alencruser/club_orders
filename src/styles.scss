@@ -2622,6 +2622,7 @@ $heat: linear-gradient(90deg, #5a1404, #c43d0a 50%, #ff8a2a 85%, #ffe08a);
 }
 
 // --- Page titles as picture banners (same pictures as the menu) ---
+h1.page-banner,
 .page-head h1.page-banner,
 .theme-forge .page-head h1.page-banner {
   display: block;
@@ -2639,7 +2640,7 @@ $heat: linear-gradient(90deg, #5a1404, #c43d0a 50%, #ff8a2a 85%, #ffe08a);
   }
 }
 @media (max-width: 900px) {
-  .page-head h1.page-banner img {
+  h1.page-banner img {
     height: 54px;
   }
 }
