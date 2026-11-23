@@ -164,7 +164,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
               tout l’historique
             }
           </p>
-          <p class="muted small">Top 5 des dons cumulés (tout ce qu’ils ont déposé).</p>
+          <p class="muted small">Top 5 en net : déposé moins retiré.</p>
           @if (d.topDonors.length) {
             <ol class="week-top">
               @for (m of d.topDonors; track m.id; let i = $index) {
@@ -172,7 +172,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
                   <span class="week-medal">{{ medals[i] }}</span>
                   <app-avatar [src]="m.avatar" [name]="m.name" [size]="24" />
                   <span class="grow">{{ m.name }}</span>
-                  <app-money [copper]="m.dep" />
+                  <app-money [copper]="m.net" [sign]="true" />
                 </li>
               }
             </ol>
