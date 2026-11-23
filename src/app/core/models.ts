@@ -178,7 +178,7 @@ export interface BankSummary {
     dep: number;
     wd: number;
     // move: places won (+) or lost (-) vs last week's final ranking; null: not ranked last week
-    // entered: was not in last week's final top 3
+    // entered: not ranked at all last week (gave nothing)
     top: {
       id: string;
       userId: string | null;

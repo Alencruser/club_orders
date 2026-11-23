@@ -126,10 +126,10 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
               @for (m of d.week.top; track m.id; let i = $index) {
                 <li>
                   <span class="week-medal">{{ medals[i] }}</span>
-                  <!-- fixed slot left of the name: entering the top 3, else places won / lost -->
+                  <!-- fixed slot left of the name: new (gave nothing last week), else places won / lost -->
                   <span class="week-move-slot">
                     @if (m.entered) {
-                      <span class="week-new" title="N’était pas dans le top 3 la semaine dernière">Nouveau</span>
+                      <span class="week-new" title="N’avait rien donné la semaine dernière">Nouveau</span>
                     } @else if (m.move) {
                       <span
                         class="week-move"
