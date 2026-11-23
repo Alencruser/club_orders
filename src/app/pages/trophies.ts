@@ -190,7 +190,7 @@ const YES_NO = new Set(['penny', 'repentant']);
                       [class.locked]="!got?.done"
                       [attr.title]="a.desc"
                     >
-                      <span class="trophy-icon">{{ icon(a.id) }}</span>
+                      <span class="trophy-icon">{{ icon(a) }}</span>
                       <div class="trophy-text">
                         <strong>{{ a.name }}</strong>
                         <span class="trophy-rarity">{{ rarity(a.rarity) }}</span>
@@ -201,15 +201,15 @@ const YES_NO = new Set(['penny', 'repentant']);
                               ? 'Débloqué le ' + date(got?.unlockedAt ?? 0)
                               : 'Débloqué'
                           }}</span>
-                        } @else if (got && !yesNo(a.id)) {
+                        } @else if (got && unit(a) !== 'bool') {
                           <span class="title-bar"
                             ><span [style.width.%]="share(got.value, got.target)"></span
                           ></span>
                           <span class="small muted">
-                            @if (money(a.id)) {
+                            @if (unit(a) === 'copper') {
                               <app-money [copper]="got.value" /> /
                               <app-money [copper]="got.target" />
-                            } @else if (time(a.id)) {
+                            } @else if (unit(a) === 'seconds') {
                               {{ fmt(got.value) }} / {{ fmt(got.target) }}
                             } @else {
                               {{ got.value }} / {{ got.target }}
@@ -281,19 +281,15 @@ export class TrophiesPage {
     const from = t.current?.min ?? 0;
     return Math.min(100, (100 * (t.value - from)) / (t.next.min - from || 1));
   }
-  icon(id: string) {
-    return ICONS[id] ?? '🏆';
+  icon(a: AchievementDef) {
+    return a.icon || ICONS[a.id] || '🏆';
   }
   rarity(r: string) {
     return RARITY[r] ?? r;
   }
-  money(id: string) {
-    return MONEY.has(id);
-  }
-  time(id: string) {
-    return TIME.has(id);
-  }
-  yesNo(id: string) {
-    return YES_NO.has(id);
+  // sent by the bot (tiers created on /admin); the lists below for an older bot
+  unit(a: AchievementDef) {
+    if (a.unit) return a.unit;
+    return MONEY.has(a.id) ? 'copper' : TIME.has(a.id) ? 'seconds' : YES_NO.has(a.id) ? 'bool' : 'count';
   }
 }

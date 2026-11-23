@@ -186,6 +186,32 @@ export interface AdminSpy {
   bots: AdminSpyBot[];
   now: number;
 }
+// 🏆 Paliers tab: the measures, their achievements and the members' values
+export interface AdminTierAchievement {
+  id: string;
+  name: string;
+  rarity: AchievementDef['rarity'];
+  icon: string | null;
+  desc: string;
+  ownDesc: string | null; // custom tier: the description typed (empty: the default one)
+  target: number;
+  custom: boolean;
+  holders: number;
+  createdAt: number | null;
+  createdBy: string | null;
+}
+export interface AdminTierMeasure {
+  key: string;
+  cat: AchievementDef['cat'];
+  label: string;
+  unit: 'count' | 'copper' | 'seconds';
+  desc: string; // default description, {v} = the goal
+  achievements: AdminTierAchievement[];
+  values: { userId: string; name: string; value: number }[];
+}
+export interface AdminTiers {
+  measures: AdminTierMeasure[];
+}
 
 // 📇 Annuaire tab of /admin. Dates: at in ms for forgotten characters.
 export interface AdminDirectoryPlayer {
@@ -336,6 +362,10 @@ export interface AchievementDef {
   name: string;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   desc: string;
+  measure?: string;
+  unit?: 'count' | 'copper' | 'seconds' | 'bool';
+  icon?: string | null; // tiers created on /admin
+  custom?: boolean;
 }
 export interface AchievementsSummary {
   definitions: AchievementDef[];

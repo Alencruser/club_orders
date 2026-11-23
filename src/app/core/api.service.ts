@@ -8,6 +8,7 @@ import {
   AdminDirectory,
   AdminMemberHit,
   AdminSpy,
+  AdminTiers,
   AdminDataset,
   AdminReleaseEntry,
   AdminState,
@@ -190,6 +191,14 @@ export class ApiService {
   }
   adminSpyAction(bot: string, action: 'start' | 'stop' | 'report' | 'post', channelId: string | null, kind?: string) {
     return this.post<{ result: unknown; spy: AdminSpy }>('/api/admin/spy/action', { bot, action, channelId, kind });
+  }
+
+  // 🏆 Paliers tab
+  adminTiers() {
+    return this.get<AdminTiers>('/api/admin/tiers');
+  }
+  adminTierAction(action: 'create' | 'update' | 'delete', body: unknown) {
+    return this.post<{ result: { holders?: number }; tiers: AdminTiers }>(`/api/admin/tiers/${action}`, body);
   }
 
   // 📇 Annuaire tab
