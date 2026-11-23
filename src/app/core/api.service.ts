@@ -7,6 +7,7 @@ import {
   AdminChannel,
   AdminDirectory,
   AdminMemberHit,
+  AdminSpy,
   AdminDataset,
   AdminReleaseEntry,
   AdminState,
@@ -181,6 +182,14 @@ export class ApiService {
   }
   adminBankNeverGave(days: number | null, excluded: string[]) {
     return this.post<AdminBank>('/api/admin/bank/nevergave', { days, excluded });
+  }
+
+  // 🕵️ Espionnage tab
+  adminSpy() {
+    return this.get<AdminSpy>('/api/admin/spy');
+  }
+  adminSpyAction(bot: string, action: 'start' | 'stop' | 'report' | 'post', channelId: string | null, kind?: string) {
+    return this.post<{ result: unknown; spy: AdminSpy }>('/api/admin/spy/action', { bot, action, channelId, kind });
   }
 
   // 📇 Annuaire tab

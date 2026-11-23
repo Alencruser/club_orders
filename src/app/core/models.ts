@@ -162,6 +162,31 @@ export interface BankMember {
   bestStreak: number;
   characters: string[];
 }
+// 🕵️ Espionnage tab of /admin. startedAt / now in ms, talk times (ms) in ms.
+export interface AdminSpyBot {
+  key: 'main' | 'espion' | 'music';
+  label: string;
+  command: string;
+  online: boolean;
+  error?: string;
+  bot?: { name: string; avatar: string | null };
+  resident?: { channelId: string; channelName: string | null } | null;
+  reportChannelId?: string | null;
+  defaultReportChannelId?: string | null;
+  session?: {
+    channelId: string;
+    channelName: string;
+    startedAt: number;
+    startedBy: string | null;
+    participants: { userId: string; name: string; ms: number; present: boolean }[];
+  } | null;
+  voiceChannels?: { id: string; name: string; humans: number; bot: boolean; joinable: boolean }[];
+}
+export interface AdminSpy {
+  bots: AdminSpyBot[];
+  now: number;
+}
+
 // 📇 Annuaire tab of /admin. Dates: at in ms for forgotten characters.
 export interface AdminDirectoryPlayer {
   userId: string;
