@@ -189,7 +189,8 @@ export interface BankSummary {
       avatar?: string | null;
     }[];
   };
-  allTime: { dep: number; wd: number };
+  // top 5 cumulated deposits since the start, per member
+  topDonors: { id: string; userId: string | null; name: string; dep: number; avatar?: string | null }[];
   milestones: { percent: number; at: number | null }[];
   members: BankMember[];
   records: {

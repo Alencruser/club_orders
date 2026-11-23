@@ -164,20 +164,21 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
               tout l’historique
             }
           </p>
-          <div class="week-figures">
-            <div class="week-figure">
-              <span class="muted">Déposé</span>
-              <app-money [copper]="d.allTime.dep" />
-            </div>
-            <div class="week-figure">
-              <span class="muted">Retiré</span>
-              <app-money [copper]="d.allTime.wd" />
-            </div>
-            <div class="week-figure net">
-              <span class="muted">Solde</span>
-              <app-money [copper]="d.allTime.dep - d.allTime.wd" [sign]="true" [big]="true" />
-            </div>
-          </div>
+          <p class="muted small">Top 5 des dons cumulés (tout ce qu’ils ont déposé).</p>
+          @if (d.topDonors.length) {
+            <ol class="week-top">
+              @for (m of d.topDonors; track m.id; let i = $index) {
+                <li>
+                  <span class="week-medal">{{ medals[i] }}</span>
+                  <app-avatar [src]="m.avatar" [name]="m.name" [size]="24" />
+                  <span class="grow">{{ m.name }}</span>
+                  <app-money [copper]="m.dep" />
+                </li>
+              }
+            </ol>
+          } @else {
+            <p class="muted small">Personne n’a encore donné.</p>
+          }
         </section>
       </div>
 
@@ -489,7 +490,7 @@ export class BankPage {
   readonly error = signal<string | null>(null);
   readonly ranking = signal<Ranking>('net'); // the current week has its own card
   readonly now = signal(Date.now()); // ticks every minute for the countdown
-  readonly medals = ['🥇', '🥈', '🥉'];
+  readonly medals = ['🥇', '🥈', '🥉', '4', '5']; // top 5 cards
   readonly open = signal<string | null>(null);
   readonly shown = signal(false); // the bar fills once, after the first paint
   readonly rankings = RANKINGS;
