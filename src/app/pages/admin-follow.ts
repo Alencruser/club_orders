@@ -8,10 +8,10 @@ import { duration } from '../shared/guild-ui';
 
 const PAGE = 100;
 
-type Show = 'all' | 'long' | 'changed' | 'running';
+type Show = 'all' | 'long' | 'ignored' | 'running';
 
 // 🚶 Suivi tab of /admin (pages/admin.ts): every follow session the addon sent, one by one. An admin can
-// ignore one (kept, counted nowhere), shorten it (AFK in /follow) or delete it. The board, the site, titles,
+// ignore one (kept, counted nowhere) or delete it; its time is never changed. The board, the site, titles,
 // achievements and challenges follow; achievements already unlocked stay.
 @Component({
   selector: 'app-admin-follow',
@@ -53,10 +53,6 @@ type Show = 'all' | 'long' | 'changed' | 'running';
     .fl-who {
       overflow-wrap: anywhere;
     }
-    .fl-time s {
-      opacity: 0.6;
-      margin-right: 0.3rem;
-    }
     .fl-acts {
       display: flex;
       gap: 0.3rem;
@@ -64,16 +60,6 @@ type Show = 'all' | 'long' | 'changed' | 'running';
       justify-content: end;
       .btn {
         padding: 0.15rem 0.5rem;
-      }
-    }
-    .fl-edit {
-      grid-column: 1 / -1;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      align-items: center;
-      input {
-        width: 6rem;
       }
     }
     .fl-badge {
@@ -97,7 +83,7 @@ type Show = 'all' | 'long' | 'changed' | 'running';
           <select [ngModel]="show()" (ngModelChange)="show.set($event); limit.set(PAGE)">
             <option value="all">Toutes</option>
             <option value="long">Plus d’1 h</option>
-            <option value="changed">Ignorées ou corrigées</option>
+            <option value="ignored">Ignorées</option>
             <option value="running">En cours</option>
           </select>
           <select [ngModel]="order()" (ngModelChange)="order.set($event)">
@@ -123,16 +109,12 @@ type Show = 'all' | 'long' | 'changed' | 'running';
                 }
               </span>
               <span class="fl-time small">
-                @if (s.edited) {
-                  <s [title]="'mesuré par l’addon ; corrigé par ' + (s.edited.by ?? '?')">{{ fmt(s.edited.from) }}</s>
-                }
                 <b>{{ fmt(s.seconds) }}</b>
               </span>
               <span class="fl-acts">
                 <button type="button" class="btn ghost" [disabled]="busy()" (click)="toggle(s)">
                   {{ s.ignored ? '↩️ Compter' : '🚫 Ignorer' }}
                 </button>
-                <button type="button" class="btn ghost" [disabled]="busy()" (click)="startEdit(s)">✏️ Durée</button>
                 <button
                   type="button"
                   class="btn danger"
@@ -143,18 +125,6 @@ type Show = 'all' | 'long' | 'changed' | 'running';
                   🗑️
                 </button>
               </span>
-              @if (editing() === s.id) {
-                <span class="fl-edit small">
-                  Durée :
-                  <input type="number" min="0" [max]="maxMinutes(s)" step="1" [(ngModel)]="minutes" /> min
-                  <span class="muted">(au plus {{ fmt(s.edited?.from ?? s.seconds) }})</span>
-                  <button type="button" class="btn gold" [disabled]="busy()" (click)="saveTime(s)">Enregistrer</button>
-                  @if (s.edited) {
-                    <button type="button" class="btn ghost" [disabled]="busy()" (click)="restore(s)">Rétablir {{ fmt(s.edited.from) }}</button>
-                  }
-                  <button type="button" class="btn ghost" (click)="editing.set(null)">Annuler</button>
-                </span>
-              }
             </li>
           } @empty {
             <li class="muted small">Aucune session.</li>
@@ -187,8 +157,6 @@ export class AdminFollowComponent {
   readonly show = signal<Show>('all');
   readonly order = signal<'recent' | 'long'>('recent');
   readonly limit = signal(PAGE);
-  readonly editing = signal<string | null>(null);
-  minutes: number | null = null;
 
   readonly counted = computed(() => (this.data()?.sessions ?? []).filter((s) => !s.ignored).reduce((sum, s) => sum + s.seconds, 0));
   readonly filtered = computed(() => {
@@ -196,7 +164,7 @@ export class AdminFollowComponent {
     const show = this.show();
     const list = (this.data()?.sessions ?? []).filter((s) => {
       if (show === 'long' && s.seconds < 3600) return false;
-      if (show === 'changed' && !s.ignored && !s.edited) return false;
+      if (show === 'ignored' && !s.ignored) return false;
       if (show === 'running' && s.done) return false;
       return !q || [s.name, s.member, s.target, s.targetMember].some((x) => x?.toLowerCase().includes(q));
     });
@@ -219,41 +187,21 @@ export class AdminFollowComponent {
     }
   }
 
-  maxMinutes(s: AdminFollowSession) {
-    return Math.floor((s.edited?.from ?? s.seconds) / 60);
-  }
-
-  startEdit(s: AdminFollowSession) {
-    this.minutes = Math.round(s.seconds / 60);
-    this.editing.set(s.id);
-  }
 
   toggle(s: AdminFollowSession) {
-    return this.run(() => this.api.adminFollowSession(s.id, { ignored: !s.ignored }), s.ignored ? '↩️ Session recomptée.' : '🚫 Session ignorée.');
+    return this.run(() => this.api.adminFollowIgnore(s.id, !s.ignored), s.ignored ? '↩️ Session recomptée.' : '🚫 Session ignorée.');
   }
 
-  saveTime(s: AdminFollowSession) {
-    const m = Number(this.minutes);
-    if (!Number.isFinite(m) || m < 0) return this.toast.error('❌ Durée invalide.');
-    const max = s.edited?.from ?? s.seconds;
-    const seconds = Math.min(max, Math.round(m * 60));
-    return this.run(() => this.api.adminFollowSession(s.id, { seconds }), `✏️ Durée : ${duration(seconds)}.`, true);
-  }
-
-  restore(s: AdminFollowSession) {
-    return this.run(() => this.api.adminFollowSession(s.id, { seconds: null }), '↩️ Durée mesurée rétablie.', true);
-  }
 
   remove(s: AdminFollowSession) {
     if (!confirm(`Supprimer pour de bon la session de ${s.member ?? s.name} → ${s.targetMember ?? s.target} (${duration(s.seconds)}) ?`)) return;
     return this.run(() => this.api.adminFollowRemove(s.id), '🗑️ Session supprimée.');
   }
 
-  private async run(call: () => Promise<AdminFollow>, done: string, closeEdit = false) {
+  private async run(call: () => Promise<AdminFollow>, done: string) {
     this.busy.set(true);
     try {
       this.data.set(await call());
-      if (closeEdit) this.editing.set(null);
       this.toast.ok(done);
     } catch (err) {
       this.toast.error(`❌ ${errorText(err)}`);

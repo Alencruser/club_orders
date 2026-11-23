@@ -186,7 +186,7 @@ export interface AdminSpy {
   bots: AdminSpyBot[];
   now: number;
 }
-// 🚶 Suivi tab: every follow session, to ignore, shorten or delete
+// 🚶 Suivi tab: every follow session, to ignore or delete
 export interface AdminFollowSession {
   id: string;
   key: string;
@@ -201,7 +201,6 @@ export interface AdminFollowSession {
   seconds: number;
   done: boolean;
   ignored: { at: number; by: string | null } | null;
-  edited: { from: number; at: number; by: string | null } | null; // from: the time the addon measured
 }
 export interface AdminFollow {
   sessions: AdminFollowSession[];

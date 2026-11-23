@@ -194,12 +194,12 @@ export class ApiService {
     return this.post<{ result: unknown; spy: AdminSpy }>('/api/admin/spy/action', { bot, action, channelId, kind });
   }
 
-  // 🚶 Suivi tab: change { ignored } or { seconds } (null: back to the measured time)
+  // 🚶 Suivi tab: a session is ignored (counted nowhere) or deleted, its time never changes
   adminFollow() {
     return this.get<AdminFollow>('/api/admin/follow');
   }
-  adminFollowSession(id: string, change: { ignored: boolean } | { seconds: number | null }) {
-    return this.post<AdminFollow>('/api/admin/follow/session', { id, ...change });
+  adminFollowIgnore(id: string, ignored: boolean) {
+    return this.post<AdminFollow>('/api/admin/follow/ignore', { id, ignored });
   }
   adminFollowRemove(id: string) {
     return this.post<AdminFollow>('/api/admin/follow/remove', { id });
