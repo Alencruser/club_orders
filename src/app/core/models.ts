@@ -171,14 +171,14 @@ export interface BankSummary {
   last: { at: number; name: string } | null;
   monthName: string;
   seasonStart: number;
-  // current weekly season (Monday 0:00 to next Monday, Paris time), seconds; previous = last week up to the same moment
+  // current weekly season (Monday 0:00 to next Monday, Paris time), seconds
   week: {
     start: number;
     end: number;
     dep: number;
     wd: number;
-    previous: { dep: number; wd: number };
-    top: { id: string; userId: string | null; name: string; net: number; avatar?: string | null }[];
+    // move: places won (+) or lost (-) vs last week's final ranking; null: not ranked last week
+    top: { id: string; userId: string | null; name: string; net: number; move: number | null; avatar?: string | null }[];
   };
   allTime: { dep: number; wd: number };
   milestones: { percent: number; at: number | null }[];

@@ -12,10 +12,9 @@ import {
   liveRefresh,
 } from '../shared/guild-ui';
 
-type Ranking = 'season' | 'net' | 'dep' | 'maxDep' | 'maxWd' | 'streak' | 'deposits' | 'minDep';
+type Ranking = 'net' | 'dep' | 'maxDep' | 'maxWd' | 'streak' | 'deposits' | 'minDep';
 
 const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number | null }[] = [
-  { key: 'season', label: 'Cette semaine', value: (m) => m.seasonNet || null },
   { key: 'net', label: 'Solde net', value: (m) => m.net },
   { key: 'dep', label: 'Total déposé', value: (m) => m.dep || null },
   { key: 'maxDep', label: 'Plus gros dépôt', value: (m) => m.maxDep?.copper ?? null },
@@ -112,21 +111,10 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
             <div class="week-figure">
               <span class="muted">Déposé</span>
               <app-money [copper]="d.week.dep" />
-              @if (trend(d.week.dep, d.week.previous.dep); as t) {
-                <span class="trend" [class.up]="t.up" [class.down]="!t.up" [attr.title]="trendTitle(d.week.previous.dep)"
-                  >{{ t.text }}</span
-                >
-              }
             </div>
             <div class="week-figure">
               <span class="muted">Retiré</span>
               <app-money [copper]="d.week.wd" />
-              @if (trend(d.week.wd, d.week.previous.wd); as t) {
-                <!-- more withdrawals is bad news: colours swapped -->
-                <span class="trend" [class.up]="!t.up" [class.down]="t.up" [attr.title]="trendTitle(d.week.previous.wd)"
-                  >{{ t.text }}</span
-                >
-              }
             </div>
             <div class="week-figure net">
               <span class="muted">Solde</span>
@@ -140,6 +128,18 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
                   <span class="week-medal">{{ medals[i] }}</span>
                   <app-avatar [src]="m.avatar" [name]="m.name" [size]="24" />
                   <span class="grow">{{ m.name }}</span>
+                  @if (m.move) {
+                    <span
+                      class="week-move"
+                      [class.down]="m.move < 0"
+                      [attr.title]="
+                        (m.move > 0 ? 'gagné ' : 'perdu ') +
+                        (m.move > 0 ? m.move : -m.move) +
+                        ' place(s) depuis la semaine dernière'
+                      "
+                      >{{ m.move > 0 ? '▲' : '▼' }}{{ m.move > 0 ? m.move : -m.move }}</span
+                    >
+                  }
                   <app-money [copper]="m.net" [sign]="true" />
                 </li>
               }
@@ -226,9 +226,6 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
                         }
                         @case ('deposits') {
                           {{ m.deposits }} dépôt{{ m.deposits > 1 ? 's' : '' }}
-                        }
-                        @case ('season') {
-                          <app-money [copper]="m.seasonNet" [sign]="true" />
                         }
                         @case ('dep') {
                           <app-money [copper]="m.dep" />
@@ -485,7 +482,7 @@ export class BankPage {
   readonly linesShown = signal(50);
   readonly busy = signal<number | null>(null);
   readonly error = signal<string | null>(null);
-  readonly ranking = signal<Ranking>('season'); // weekly seasons: the current week first
+  readonly ranking = signal<Ranking>('net'); // the current week has its own card
   readonly now = signal(Date.now()); // ticks every minute for the countdown
   readonly medals = ['🥇', '🥈', '🥉'];
   readonly open = signal<string | null>(null);
@@ -540,17 +537,6 @@ export class BankPage {
     liveRefresh('bank', () => this.load());
     const timer = setInterval(() => this.now.set(Date.now()), 60_000);
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
-  }
-
-  // ▲▼ compared with last week at the same moment; nothing when there is nothing to compare
-  trend(value: number, previous: number): { up: boolean; text: string } | null {
-    if (!previous) return value ? { up: true, text: '▲ nouveau' } : null;
-    const pct = Math.round(((value - previous) / previous) * 100);
-    if (!pct) return { up: true, text: '= pareil' };
-    return { up: pct > 0, text: `${pct > 0 ? '▲' : '▼'} ${pct > 0 ? '+' : ''}${pct} %` };
-  }
-  trendTitle(previous: number) {
-    return `vs semaine dernière au même moment : ${(previous / 10000).toFixed(2).replace('.', ',')} po`;
   }
 
   load() {
