@@ -32,6 +32,11 @@ export class ApiService {
     return this.get<Me>('/api/me');
   }
 
+  // One of the player's own characters, deleted in game: forgotten for good (the addon would send it back)
+  forgetMyCharacter(name: string, realm: string) {
+    return this.post<{ name: string }>('/api/me/characters/forget', { name, realm });
+  }
+
   // the player's addon and companion versions (Nono's reminder), re-read on every page change
   async myVersions() {
     return (await this.get<{ versions: MyVersions | null }>('/api/me/versions')).versions;

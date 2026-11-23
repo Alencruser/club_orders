@@ -337,6 +337,7 @@ export interface HomeData {
     trophies: number;
     trophiesTotal: number;
     next: (AchievementDef & { value: number; target: number; share: number })[];
+    characters: { name: string; realm: string; class: string; level: number }[]; // the player's own
   };
   bank: {
     goal: number;

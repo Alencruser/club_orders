@@ -5,6 +5,7 @@ import { OrdersService } from '../core/orders.service';
 import { HomeData, HomeEvent, HomePerson } from '../core/models';
 import { AvatarComponent, MoneyComponent, duration, frDate, liveRefresh } from '../shared/guild-ui';
 import { classColor } from '../shared/ui';
+import { ToastService } from '../core/toast.service';
 
 const RARITY: Record<string, string> = {
   common: 'commun',
@@ -270,6 +271,32 @@ const RARITY: Record<string, string> = {
             </section>
           }
 
+          @if (d.me.characters.length) {
+            <section class="tooltip home-mychars">
+              <h4>🧝 Mes persos</h4>
+              <ul>
+                @for (c of d.me.characters; track c.name + c.realm) {
+                  <li>
+                    <span class="grow">
+                      <b [style.color]="color(c.class)">{{ c.name }}</b>
+                      <span class="muted small">{{ c.realm }} · niv. {{ c.level }}</span>
+                    </span>
+                    <button
+                      type="button"
+                      class="btn ghost"
+                      title="Supprimé en jeu ? Le retirer pour de bon (l'addon ne le fera plus revenir)"
+                      [disabled]="forgetting() === c.name"
+                      (click)="forget(c)"
+                    >
+                      🗑️
+                    </button>
+                  </li>
+                }
+              </ul>
+              <p class="muted small">🗑️ : un perso supprimé en jeu, retiré pour de bon.</p>
+            </section>
+          }
+
           <section class="tooltip">
             <h4>🚀 Bien démarrer</h4>
             <ol class="home-steps">
@@ -299,6 +326,8 @@ export class HomePage {
   private api = inject(ApiService);
   private router = inject(Router);
   protected orders = inject(OrdersService);
+  private toast = inject(ToastService);
+  readonly forgetting = signal<string | null>(null);
 
   readonly data = signal<HomeData | null>(null);
   readonly error = signal<string | null>(null);
@@ -317,6 +346,25 @@ export class HomePage {
   readonly fresh = computed(
     () => this.orders.receivedPending().filter((o) => Date.now() - o.createdAt < 86400000).length,
   );
+
+  async forget(c: { name: string; realm: string }) {
+    if (
+      !confirm(
+        `Supprimer ${c.name} pour de bon ?\n\nÀ faire seulement si ce perso a été supprimé en jeu : il disparaît de l'annuaire et des métiers, et l'addon ne le fera plus revenir. Un admin peut le rétablir.`,
+      )
+    )
+      return;
+    this.forgetting.set(c.name);
+    try {
+      await this.api.forgetMyCharacter(c.name, c.realm);
+      this.toast.ok(`🗑️ ${c.name} supprimé pour de bon.`);
+      this.load();
+    } catch (err) {
+      this.toast.error(`❌ ${errorText(err)}`);
+    } finally {
+      this.forgetting.set(null);
+    }
+  }
 
   constructor() {
     // old links to the grimoire (/?metier=…): it moved to /grimoire

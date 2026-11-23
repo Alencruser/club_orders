@@ -3581,3 +3581,20 @@ $da-frame-shadow:
     animation: none;
   }
 }
+
+// Home: the player's own characters (pages/home.ts, 🗑️ deleted in game)
+.home-mychars ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid rgba(240, 196, 110, 0.12);
+  }
+  .btn {
+    padding: 0.1rem 0.4rem;
+  }
+}
