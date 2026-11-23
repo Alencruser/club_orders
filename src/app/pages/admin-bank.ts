@@ -11,6 +11,46 @@ import { MoneyComponent } from '../shared/guild-ui';
 @Component({
   selector: 'app-admin-bank',
   imports: [DatePipe, FormsModule, MoneyComponent],
+  // only loaded with /admin (lazy chunk), not in the global stylesheet
+  styles: `
+// 🏦 Banque tab (pages/admin-bank.ts): members left out of « Jamais donné »
+.admin-search {
+  width: 100%;
+  margin: 0.3rem 0;
+}
+.admin-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+  gap: 0.15rem 0.8rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  padding: 0.3rem 0;
+  label {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+}
+.admin-days {
+  width: 4.5rem;
+  margin: 0 0.3rem;
+}
+.admin-radios {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.3rem 0 0.6rem;
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    cursor: pointer;
+  }
+}
+`,
   template: `
     @if (bank(); as b) {
       <div class="admin-grid">

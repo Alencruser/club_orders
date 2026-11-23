@@ -162,6 +162,34 @@ export interface BankMember {
   bestStreak: number;
   characters: string[];
 }
+// 📇 Annuaire tab of /admin. Dates: at in ms for forgotten characters.
+export interface AdminDirectoryPlayer {
+  userId: string;
+  name: string;
+  avatar: string | null;
+  inGuild: boolean;
+  battletag: string;
+  classKey: string | null;
+  classId: string | null;
+  classLabel: string | null;
+  classIcon: string | null;
+  characters: { name: string; realm: string; classKey: string; classLabel: string; level: number }[];
+  links: string[]; // « name-realm » keys linked to this battletag (bank, follow, duels)
+}
+export interface AdminDirectory {
+  players: AdminDirectoryPlayer[];
+  classes: { id: string; key: string; label: string; icon: string | null }[];
+  unlinked: { key: string; name: string; realm: string; bank: number; follow: number; last: number }[];
+  forgotten: { key: string; name: string; realm: string; at: number; by: string | null }[];
+}
+export interface AdminMemberHit {
+  userId: string;
+  name: string;
+  username: string;
+  avatar: string | null;
+  registered: boolean;
+}
+
 // 🏦 Banque tab of /admin. Amounts in copper, dates in seconds.
 export interface AdminBank {
   goal: { copper: number; name: string; since: number | null };

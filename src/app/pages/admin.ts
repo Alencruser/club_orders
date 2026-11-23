@@ -16,9 +16,10 @@ import { ToastService } from '../core/toast.service';
 import { AdminDataComponent } from './admin-data';
 import { AdminToolsComponent } from './admin-tools';
 import { AdminBankComponent } from './admin-bank';
+import { AdminDirectoryComponent } from './admin-directory';
 
-type Tab = 'status' | 'channels' | 'anomalies' | 'versions' | 'bank' | 'data' | 'tools';
-const TABS: Tab[] = ['status', 'channels', 'anomalies', 'versions', 'bank', 'data', 'tools'];
+type Tab = 'status' | 'channels' | 'anomalies' | 'versions' | 'bank' | 'directory' | 'data' | 'tools';
+const TABS: Tab[] = ['status', 'channels', 'anomalies', 'versions', 'bank', 'directory', 'data', 'tools'];
 const SEVERITY = { red: '🔴', orange: '🟠', benign: '⚪' } as const;
 const AUTO_REFRESH_MS = 60 * 1000;
 
@@ -27,7 +28,7 @@ const AUTO_REFRESH_MS = 60 * 1000;
 // sent back home. Step 1: status, channels, anomalies (data and tools come next).
 @Component({
   selector: 'app-admin',
-  imports: [DatePipe, FormsModule, AdminDataComponent, AdminToolsComponent, AdminBankComponent],
+  imports: [DatePipe, FormsModule, AdminDataComponent, AdminToolsComponent, AdminBankComponent, AdminDirectoryComponent],
   template: `
     @if (state(); as s) {
       <div class="page-head">
@@ -60,6 +61,7 @@ const AUTO_REFRESH_MS = 60 * 1000;
             }
           </button>
           <button type="button" [class.active]="tab() === 'bank'" (click)="go('bank')">🏦 Banque</button>
+          <button type="button" [class.active]="tab() === 'directory'" (click)="go('directory')">📇 Annuaire</button>
           <button type="button" [class.active]="tab() === 'data'" (click)="go('data')">🗂️ Données</button>
           <button type="button" [class.active]="tab() === 'tools'" (click)="go('tools')">🛠️ Outils</button>
         </div>
@@ -369,6 +371,9 @@ const AUTO_REFRESH_MS = 60 * 1000;
 
       @if (tab() === 'data') {
         <app-admin-data [orphans]="orphanCount()" (changed)="load(true)" />
+      }
+      @if (tab() === 'directory') {
+        <app-admin-directory />
       }
       @if (tab() === 'bank') {
         <app-admin-bank />

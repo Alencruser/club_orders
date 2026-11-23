@@ -5,6 +5,8 @@ import {
   AchievementsSummary,
   AdminBank,
   AdminChannel,
+  AdminDirectory,
+  AdminMemberHit,
   AdminDataset,
   AdminReleaseEntry,
   AdminState,
@@ -179,6 +181,17 @@ export class ApiService {
   }
   adminBankNeverGave(days: number | null, excluded: string[]) {
     return this.post<AdminBank>('/api/admin/bank/nevergave', { days, excluded });
+  }
+
+  // 📇 Annuaire tab
+  adminDirectory() {
+    return this.get<AdminDirectory>('/api/admin/directory');
+  }
+  async adminDirectoryMembers(q: string) {
+    return (await this.get<{ members: AdminMemberHit[] }>(`/api/admin/directory/members?q=${encodeURIComponent(q)}`)).members;
+  }
+  adminDirectoryAction(action: 'player' | 'remove' | 'link' | 'forget' | 'restore', body: unknown) {
+    return this.post<{ result: unknown; directory: AdminDirectory }>(`/api/admin/directory/${action}`, body);
   }
 
   adminTools() {
