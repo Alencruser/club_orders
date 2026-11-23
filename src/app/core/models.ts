@@ -186,6 +186,27 @@ export interface AdminSpy {
   bots: AdminSpyBot[];
   now: number;
 }
+// 🚶 Suivi tab: every follow session, to ignore, shorten or delete
+export interface AdminFollowSession {
+  id: string;
+  key: string;
+  name: string; // the follower's character
+  realm: string;
+  userId: string | null;
+  member: string | null;
+  target: string;
+  targetUserId: string | null;
+  targetMember: string | null;
+  start: number;
+  seconds: number;
+  done: boolean;
+  ignored: { at: number; by: string | null } | null;
+  edited: { from: number; at: number; by: string | null } | null; // from: the time the addon measured
+}
+export interface AdminFollow {
+  sessions: AdminFollowSession[];
+  now: number;
+}
 // 🏆 Paliers tab: the measures, their achievements and the members' values
 export interface AdminTierAchievement {
   id: string;

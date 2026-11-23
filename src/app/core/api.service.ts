@@ -9,6 +9,7 @@ import {
   AdminMemberHit,
   AdminSpy,
   AdminTiers,
+  AdminFollow,
   AdminDataset,
   AdminReleaseEntry,
   AdminState,
@@ -191,6 +192,17 @@ export class ApiService {
   }
   adminSpyAction(bot: string, action: 'start' | 'stop' | 'report' | 'post', channelId: string | null, kind?: string) {
     return this.post<{ result: unknown; spy: AdminSpy }>('/api/admin/spy/action', { bot, action, channelId, kind });
+  }
+
+  // 🚶 Suivi tab: change { ignored } or { seconds } (null: back to the measured time)
+  adminFollow() {
+    return this.get<AdminFollow>('/api/admin/follow');
+  }
+  adminFollowSession(id: string, change: { ignored: boolean } | { seconds: number | null }) {
+    return this.post<AdminFollow>('/api/admin/follow/session', { id, ...change });
+  }
+  adminFollowRemove(id: string) {
+    return this.post<AdminFollow>('/api/admin/follow/remove', { id });
   }
 
   // 🏆 Paliers tab

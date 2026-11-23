@@ -19,9 +19,10 @@ import { AdminBankComponent } from './admin-bank';
 import { AdminDirectoryComponent } from './admin-directory';
 import { AdminSpyComponent } from './admin-spy';
 import { AdminTiersComponent } from './admin-tiers';
+import { AdminFollowComponent } from './admin-follow';
 
-type Tab = 'status' | 'channels' | 'anomalies' | 'versions' | 'bank' | 'directory' | 'spy' | 'tiers' | 'data' | 'tools';
-const TABS: Tab[] = ['status', 'channels', 'anomalies', 'versions', 'bank', 'directory', 'spy', 'tiers', 'data', 'tools'];
+type Tab = 'status' | 'channels' | 'anomalies' | 'versions' | 'bank' | 'directory' | 'spy' | 'follow' | 'tiers' | 'data' | 'tools';
+const TABS: Tab[] = ['status', 'channels', 'anomalies', 'versions', 'bank', 'directory', 'spy', 'follow', 'tiers', 'data', 'tools'];
 const SEVERITY = { red: '🔴', orange: '🟠', benign: '⚪' } as const;
 const AUTO_REFRESH_MS = 60 * 1000;
 
@@ -30,7 +31,7 @@ const AUTO_REFRESH_MS = 60 * 1000;
 // sent back home. Step 1: status, channels, anomalies (data and tools come next).
 @Component({
   selector: 'app-admin',
-  imports: [DatePipe, FormsModule, AdminDataComponent, AdminToolsComponent, AdminBankComponent, AdminDirectoryComponent, AdminSpyComponent, AdminTiersComponent],
+  imports: [DatePipe, FormsModule, AdminDataComponent, AdminToolsComponent, AdminBankComponent, AdminDirectoryComponent, AdminSpyComponent, AdminFollowComponent, AdminTiersComponent],
   template: `
     @if (state(); as s) {
       <div class="page-head">
@@ -65,6 +66,7 @@ const AUTO_REFRESH_MS = 60 * 1000;
           <button type="button" [class.active]="tab() === 'bank'" (click)="go('bank')">🏦 Banque</button>
           <button type="button" [class.active]="tab() === 'directory'" (click)="go('directory')">📇 Annuaire</button>
           <button type="button" [class.active]="tab() === 'spy'" (click)="go('spy')">🕵️ Espionnage</button>
+          <button type="button" [class.active]="tab() === 'follow'" (click)="go('follow')">🚶 Suivi</button>
           <button type="button" [class.active]="tab() === 'tiers'" (click)="go('tiers')">🏆 Paliers</button>
           <button type="button" [class.active]="tab() === 'data'" (click)="go('data')">🗂️ Données</button>
           <button type="button" [class.active]="tab() === 'tools'" (click)="go('tools')">🛠️ Outils</button>
@@ -378,6 +380,9 @@ const AUTO_REFRESH_MS = 60 * 1000;
       }
       @if (tab() === 'spy') {
         <app-admin-spy />
+      }
+      @if (tab() === 'follow') {
+        <app-admin-follow />
       }
       @if (tab() === 'tiers') {
         <app-admin-tiers />
