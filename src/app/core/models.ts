@@ -162,9 +162,22 @@ export interface BankMember {
   bestStreak: number;
   characters: string[];
 }
+// 🏦 Banque tab of /admin. Amounts in copper, dates in seconds.
+export interface AdminBank {
+  goal: { copper: number; name: string; since: number | null };
+  money: number | null;
+  history: { copper: number; name: string; since: number | null; until: number; reachedAt: number | null }[];
+  neverGave: { days: number | null; excluded: string[] };
+  list: { userId: string; name: string }[]; // who is in « Jamais donné » with these settings
+  players: { userId: string; name: string }[]; // directory members, to leave some out
+}
+
 export interface BankSummary {
   guildName: string | null;
   goal: number;
+  goalName: string; // set on /admin (🏦 Banque)
+  neverGaveTitle: string; // « Jamais donné » or « Rien donné depuis N jours »
+  neverGaveDays: number | null;
   money: number | null;
   moneyAt: number | null;
   since: number | null;

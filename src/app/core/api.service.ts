@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   AchievementsSummary,
+  AdminBank,
   AdminChannel,
   AdminDataset,
   AdminReleaseEntry,
@@ -167,6 +168,17 @@ export class ApiService {
   // userId null: everyone
   adminReset(what: 'levels' | 'ranking', userId: string | null) {
     return this.post<{ text: string }>('/api/admin/reset', { what, userId });
+  }
+
+  // 🏦 Banque tab: goal and « Jamais donné » settings
+  adminBank() {
+    return this.get<AdminBank>('/api/admin/bank');
+  }
+  adminBankGoal(copper: number, name: string) {
+    return this.post<AdminBank>('/api/admin/bank/goal', { copper, name });
+  }
+  adminBankNeverGave(days: number | null, excluded: string[]) {
+    return this.post<AdminBank>('/api/admin/bank/nevergave', { days, excluded });
   }
 
   adminTools() {

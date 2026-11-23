@@ -58,7 +58,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
         <section class="tooltip goal">
           <div class="goal-head">
             <div>
-              <h2>Objectif : onglet de banque <app-share card="goal" /></h2>
+              <h2>Objectif : {{ d.goalName }} <app-share card="goal" /></h2>
               <p class="goal-have">Déjà en banque : <app-money [copper]="d.money" /></p>
             </div>
             <div class="goal-target">
@@ -453,7 +453,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
             }
           </div>
           <div class="tooltip">
-            <h4>🙈 Jamais donné ({{ d.neverGave.length }}) <app-share card="never" /></h4>
+            <h4>🙈 {{ d.neverGaveTitle }} ({{ d.neverGave.length }}) <app-share card="never" /></h4>
             @if (d.neverGave.length) {
               <div class="never">
                 @for (p of d.neverGave; track p.userId) {
@@ -465,7 +465,7 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
               </div>
               <p class="muted small">Un dépôt, même une pièce de cuivre, et tu sors de la liste.</p>
             } @else {
-              <p class="muted">Tout le monde a déjà donné 🎉</p>
+              <p class="muted">{{ d.neverGaveDays ? 'Tout le monde a donné récemment 🎉' : 'Tout le monde a déjà donné 🎉' }}</p>
             }
           </div>
         </aside>
