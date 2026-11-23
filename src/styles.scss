@@ -1108,7 +1108,25 @@ input[type='checkbox'] {
     text-align: right;
   }
 }
-// places won (▲) or lost (▼) since last week's final ranking
+// left of the name: « Nouveau » badge or places won (▲) / lost (▼) since last week's final ranking
+.week-move-slot {
+  flex: none;
+  width: 4.6rem;
+  text-align: center;
+}
+.week-new {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffe066, var(--gold-dim));
+  color: #2a1a00;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 8px rgba(255, 209, 0, 0.45);
+}
 .week-move {
   font-size: 0.78rem;
   font-weight: 700;

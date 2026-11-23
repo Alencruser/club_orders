@@ -126,20 +126,25 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
               @for (m of d.week.top; track m.id; let i = $index) {
                 <li>
                   <span class="week-medal">{{ medals[i] }}</span>
+                  <!-- fixed slot left of the name: entering the top 3, else places won / lost -->
+                  <span class="week-move-slot">
+                    @if (m.entered) {
+                      <span class="week-new" title="N’était pas dans le top 3 la semaine dernière">Nouveau</span>
+                    } @else if (m.move) {
+                      <span
+                        class="week-move"
+                        [class.down]="m.move < 0"
+                        [attr.title]="
+                          (m.move > 0 ? 'gagné ' : 'perdu ') +
+                          (m.move > 0 ? m.move : -m.move) +
+                          ' place(s) depuis la semaine dernière'
+                        "
+                        >{{ m.move > 0 ? '▲' : '▼' }}{{ m.move > 0 ? m.move : -m.move }}</span
+                      >
+                    }
+                  </span>
                   <app-avatar [src]="m.avatar" [name]="m.name" [size]="24" />
                   <span class="grow">{{ m.name }}</span>
-                  @if (m.move) {
-                    <span
-                      class="week-move"
-                      [class.down]="m.move < 0"
-                      [attr.title]="
-                        (m.move > 0 ? 'gagné ' : 'perdu ') +
-                        (m.move > 0 ? m.move : -m.move) +
-                        ' place(s) depuis la semaine dernière'
-                      "
-                      >{{ m.move > 0 ? '▲' : '▼' }}{{ m.move > 0 ? m.move : -m.move }}</span
-                    >
-                  }
                   <app-money [copper]="m.net" [sign]="true" />
                 </li>
               }

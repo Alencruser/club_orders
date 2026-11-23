@@ -178,7 +178,16 @@ export interface BankSummary {
     dep: number;
     wd: number;
     // move: places won (+) or lost (-) vs last week's final ranking; null: not ranked last week
-    top: { id: string; userId: string | null; name: string; net: number; move: number | null; avatar?: string | null }[];
+    // entered: was not in last week's final top 3
+    top: {
+      id: string;
+      userId: string | null;
+      name: string;
+      net: number;
+      move: number | null;
+      entered: boolean;
+      avatar?: string | null;
+    }[];
   };
   allTime: { dep: number; wd: number };
   milestones: { percent: number; at: number | null }[];
