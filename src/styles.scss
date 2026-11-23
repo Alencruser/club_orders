@@ -1051,6 +1051,94 @@ input[type='checkbox'] {
     margin-top: 0;
   }
 }
+
+// Bank: current weekly season next to the all-time totals (pages/bank.ts)
+.bank-week {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+.week-card {
+  border-color: var(--gold-dim);
+  background:
+    radial-gradient(ellipse at 15% 0%, rgba(255, 209, 0, 0.14), transparent 60%),
+    linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
+  &.all-time {
+    border-color: var(--border);
+    background: linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
+  }
+  h2 {
+    margin: 0;
+  }
+}
+.week-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.week-left {
+  padding: 0.1rem 0.55rem;
+  border: 1px solid var(--gold-dim);
+  border-radius: 999px;
+  color: var(--gold);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.week-dates {
+  margin: 0.15rem 0 0.7rem;
+}
+.week-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.6rem;
+  align-items: flex-end;
+}
+.week-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  > .muted {
+    font-size: 0.8rem;
+  }
+  &.net {
+    margin-left: auto;
+    text-align: right;
+  }
+}
+.trend {
+  font-size: 0.78rem;
+  font-weight: 700;
+  &.up {
+    color: var(--green);
+  }
+  &.down {
+    color: var(--red);
+  }
+}
+.week-top {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0.5rem 0 0;
+  border-top: 1px solid var(--border-soft);
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+  }
+}
+.week-medal {
+  width: 1.4em;
+  text-align: center;
+}
+@media (max-width: 900px) {
+  .bank-week {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .section-head {
   display: flex;
   justify-content: space-between;

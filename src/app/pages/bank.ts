@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { ApiService, errorText } from '../core/api.service';
 import { BankLine, BankMember, BankSummary } from '../core/models';
 import { SessionService } from '../core/session.service';
@@ -100,6 +100,81 @@ const RANKINGS: { key: Ranking; label: string; value: (m: BankMember) => number 
           </div>
         </section>
       }
+
+      <div class="bank-week">
+        <section class="tooltip week-card">
+          <div class="week-head">
+            <h2>📅 Cette semaine</h2>
+            <span class="week-left">fin dans {{ weekLeft() }}</span>
+          </div>
+          <p class="muted small week-dates">{{ weekDates() }} · saison hebdo</p>
+          <div class="week-figures">
+            <div class="week-figure">
+              <span class="muted">Déposé</span>
+              <app-money [copper]="d.week.dep" />
+              @if (trend(d.week.dep, d.week.previous.dep); as t) {
+                <span class="trend" [class.up]="t.up" [class.down]="!t.up" [attr.title]="trendTitle(d.week.previous.dep)"
+                  >{{ t.text }}</span
+                >
+              }
+            </div>
+            <div class="week-figure">
+              <span class="muted">Retiré</span>
+              <app-money [copper]="d.week.wd" />
+              @if (trend(d.week.wd, d.week.previous.wd); as t) {
+                <!-- more withdrawals is bad news: colours swapped -->
+                <span class="trend" [class.up]="!t.up" [class.down]="t.up" [attr.title]="trendTitle(d.week.previous.wd)"
+                  >{{ t.text }}</span
+                >
+              }
+            </div>
+            <div class="week-figure net">
+              <span class="muted">Solde</span>
+              <app-money [copper]="d.week.dep - d.week.wd" [sign]="true" [big]="true" />
+            </div>
+          </div>
+          @if (d.week.top.length) {
+            <ol class="week-top">
+              @for (m of d.week.top; track m.id; let i = $index) {
+                <li>
+                  <span class="week-medal">{{ medals[i] }}</span>
+                  <app-avatar [src]="m.avatar" [name]="m.name" [size]="24" />
+                  <span class="grow">{{ m.name }}</span>
+                  <app-money [copper]="m.net" [sign]="true" />
+                </li>
+              }
+            </ol>
+          } @else {
+            <p class="muted small">Personne n’a encore donné cette semaine : la première place est libre.</p>
+          }
+        </section>
+        <section class="tooltip week-card all-time">
+          <div class="week-head">
+            <h2>🏦 Depuis le début</h2>
+          </div>
+          <p class="muted small week-dates">
+            @if (d.since) {
+              suivi depuis le {{ date(d.since) }}
+            } @else {
+              tout l’historique
+            }
+          </p>
+          <div class="week-figures">
+            <div class="week-figure">
+              <span class="muted">Déposé</span>
+              <app-money [copper]="d.allTime.dep" />
+            </div>
+            <div class="week-figure">
+              <span class="muted">Retiré</span>
+              <app-money [copper]="d.allTime.wd" />
+            </div>
+            <div class="week-figure net">
+              <span class="muted">Solde</span>
+              <app-money [copper]="d.allTime.dep - d.allTime.wd" [sign]="true" [big]="true" />
+            </div>
+          </div>
+        </section>
+      </div>
 
       <div class="bank-grid">
         <div class="bank-main">
@@ -410,7 +485,9 @@ export class BankPage {
   readonly linesShown = signal(50);
   readonly busy = signal<number | null>(null);
   readonly error = signal<string | null>(null);
-  readonly ranking = signal<Ranking>('net');
+  readonly ranking = signal<Ranking>('season'); // weekly seasons: the current week first
+  readonly now = signal(Date.now()); // ticks every minute for the countdown
+  readonly medals = ['🥇', '🥈', '🥉'];
   readonly open = signal<string | null>(null);
   readonly shown = signal(false); // the bar fills once, after the first paint
   readonly rankings = RANKINGS;
@@ -440,9 +517,40 @@ export class BankPage {
     Math.max(1, ...(this.data()?.days ?? []).map((d) => Math.max(d.dep, d.wd))),
   );
 
+  // time left until the season ends (next Monday 0:00, Paris time)
+  readonly weekLeft = computed(() => {
+    const end = this.data()?.week.end;
+    if (!end) return '—';
+    const minutes = Math.max(0, Math.floor((end * 1000 - this.now()) / 60000));
+    const days = Math.floor(minutes / 1440);
+    const hours = Math.floor((minutes % 1440) / 60);
+    if (days) return `${days} j ${hours} h`;
+    return hours ? `${hours} h ${minutes % 60} min` : `${minutes % 60} min`;
+  });
+  readonly weekDates = computed(() => {
+    const w = this.data()?.week;
+    if (!w) return '';
+    const fmt = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', weekday: 'short', day: 'numeric', month: 'short' });
+    // end is next Monday 0:00: the last second belongs to Sunday
+    return `${fmt.format(new Date(w.start * 1000))} → ${fmt.format(new Date((w.end - 1) * 1000))}`;
+  });
+
   constructor() {
     this.load();
     liveRefresh('bank', () => this.load());
+    const timer = setInterval(() => this.now.set(Date.now()), 60_000);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+  }
+
+  // ▲▼ compared with last week at the same moment; nothing when there is nothing to compare
+  trend(value: number, previous: number): { up: boolean; text: string } | null {
+    if (!previous) return value ? { up: true, text: '▲ nouveau' } : null;
+    const pct = Math.round(((value - previous) / previous) * 100);
+    if (!pct) return { up: true, text: '= pareil' };
+    return { up: pct > 0, text: `${pct > 0 ? '▲' : '▼'} ${pct > 0 ? '+' : ''}${pct} %` };
+  }
+  trendTitle(previous: number) {
+    return `vs semaine dernière au même moment : ${(previous / 10000).toFixed(2).replace('.', ',')} po`;
   }
 
   load() {
