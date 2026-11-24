@@ -8,6 +8,8 @@ import { ToastService } from '../core/toast.service';
 // 📇 Annuaire tab of /admin (pages/admin.ts): every player (Discord member → battletag, class, known
 // characters), add / edit / delete a battletag, characters deleted in game, characters nobody claims
 // (seen in the bank or the follow log without a known battletag) linked to a player.
+const IDLE_DAYS = 30; // 💤 after this long without anything received
+
 @Component({
   selector: 'app-admin-directory',
   imports: [DatePipe, FormsModule],
@@ -68,6 +70,15 @@ import { ToastService } from '../core/toast.service';
 .admin-dir-class {
   width: 22px;
   height: 22px;
+}
+.admin-dir-seen {
+  text-align: right;
+  &.idle {
+    opacity: 0.7;
+  }
+}
+.admin-dir-hit.idle .admin-dir-ago {
+  color: #e0a040;
 }
 .admin-dir-detail {
   padding: 0.2rem 0.8rem 0.8rem 2.9rem;
@@ -165,7 +176,9 @@ import { ToastService } from '../core/toast.service';
                 @if (p.classIcon) {
                   <img class="admin-dir-class" [src]="p.classIcon" [alt]="p.classLabel ?? ''" [title]="p.classLabel ?? ''" />
                 }
-                <span class="muted small">{{ p.characters.length }} perso(s)</span>
+                <span class="muted small admin-dir-seen" [class.idle]="idle(p.lastSeen)">
+                  {{ p.characters.length }} perso(s)<br />{{ ago(p.lastSeen) }}
+                </span>
               </button>
               @if (open() === p.userId) {
                 <div class="admin-dir-detail">
@@ -184,32 +197,32 @@ import { ToastService } from '../core/toast.service';
                       délie ses persos ✂️.
                     </p>
                   }
-                  <h4>Persos connus (addon)</h4>
+                  <h4>Ses persos <span class="muted small">(le plus récemment actif d'abord)</span></h4>
                   <ul class="admin-list">
-                    @for (c of p.characters; track c.name + c.realm) {
-                      <li class="admin-dir-hit">
-                        <span class="grow"
-                          >{{ c.name }} <span class="muted small">{{ c.classLabel }} niv. {{ c.level }} · {{ c.realm }}</span></span
-                        >
-                        <button type="button" class="btn ghost" title="Supprimé en jeu : retiré pour de bon" [disabled]="busy()" (click)="forget(c)">
-                          🪦
-                        </button>
+                    @for (c of p.characters; track c.key) {
+                      <li class="admin-dir-hit" [class.idle]="idle(c.lastSeen)">
+                        <span class="grow">
+                          <b>{{ c.name }}</b>
+                          <span class="muted small">
+                            @if (c.known) {
+                              {{ c.classLabel }}{{ c.level ? ' niv. ' + c.level : '' }}
+                            } @else {
+                              relié à la main
+                            }
+                          </span>
+                          <br /><span class="small admin-dir-ago">{{ idle(c.lastSeen) ? '💤 ' : '' }}{{ ago(c.lastSeen) }}</span>
+                        </span>
+                        <button type="button" class="btn ghost" title="Ce n'est pas son perso : le délier" [disabled]="busy()" (click)="link(c.key, null)">✂️ Délier</button>
+                        <button type="button" class="btn ghost" title="Supprimé en jeu : à la corbeille" [disabled]="busy()" (click)="forget(c)">🪦 Corbeille</button>
                       </li>
                     } @empty {
-                      <li class="muted small">Aucun perso connu.</li>
+                      <li class="muted small">Aucun perso.</li>
                     }
                   </ul>
-                  <h4>Persos reliés (banque, suivi, duels)</h4>
-                  <ul class="admin-list">
-                    @for (k of p.links; track k) {
-                      <li class="admin-dir-hit">
-                        <span class="grow">{{ k }}</span>
-                        <button type="button" class="btn ghost" title="Délier" [disabled]="busy()" (click)="link(k, null)">✂️</button>
-                      </li>
-                    } @empty {
-                      <li class="muted small">Aucun.</li>
-                    }
-                  </ul>
+                  <p class="muted small">
+                    💤 : rien reçu depuis plus de {{ idleDays }} jours (ni connexion, ni banque, ni suivi, ni métiers) : peut-être supprimé en
+                    jeu. ✂️ délie un perso qui n'est pas à lui, 🪦 met à la corbeille un perso supprimé en jeu (rétablissable).
+                  </p>
                 </div>
               }
             </li>
@@ -237,7 +250,9 @@ import { ToastService } from '../core/toast.service';
                 <span class="grow"
                   ><b>{{ u.name }}</b> <span class="muted small">{{ u.realm }}
                   @if (u.bank) { · {{ u.bank }} ligne(s) de banque }
-                  @if (u.follow) { · {{ u.follow }} suivi(s) }</span></span
+                  @if (u.follow) { · {{ u.follow }} suivi(s) }
+                  @if (u.waiting) { · attend le battletag {{ u.waiting }} (personne ne l'a dans l'annuaire) }
+                  · {{ ago(u.last || null) }}</span></span
                 >
                 <select [(ngModel)]="linkTo[u.key]">
                   <option [ngValue]="undefined">Membre…</option>
@@ -345,6 +360,21 @@ export class AdminDirectoryComponent {
     this.load();
   }
 
+  readonly idleDays = IDLE_DAYS;
+
+  // « il y a 3 j », from a date in seconds
+  ago(at: number | null) {
+    if (!at) return 'aucune activité reçue';
+    const s = Math.max(0, Date.now() / 1000 - at);
+    if (s < 3600) return 'actif il y a moins d’une heure';
+    if (s < 86400) return `actif il y a ${Math.floor(s / 3600)} h`;
+    return `actif il y a ${Math.floor(s / 86400)} j`;
+  }
+
+  idle(at: number | null) {
+    return !at || Date.now() / 1000 - at > IDLE_DAYS * 86400;
+  }
+
   memberName(userId: string) {
     const d = this.dir();
     return d?.members?.find((m) => m.userId === userId)?.name ?? d?.players.find((p) => p.userId === userId)?.name ?? userId;
@@ -406,6 +436,7 @@ export class AdminDirectoryComponent {
   }
 
   async forget(c: { name: string; realm: string }) {
+    // à la corbeille : rétablissable depuis 🪦 Corbeille
     if (!confirm(`${c.name} a été supprimé en jeu ?\n\nIl disparaît de l'annuaire et des métiers, et l'addon ne le fera plus revenir. Rétablissable.`)) return;
     await this.run(() => this.api.adminDirectoryAction('forget', { name: c.name, realm: c.realm }), `🪦 ${c.name} supprimé pour de bon.`);
   }

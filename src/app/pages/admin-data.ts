@@ -1,10 +1,10 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService, errorText } from '../core/api.service';
 import { AdminDataset } from '../core/models';
 import { ToastService } from '../core/toast.service';
 
-// 🗂️ Données tab of /admin (pages/admin.ts): resets, orphans, and every list of the bot's data with a
+// 🗂️ Données tab of /admin (pages/admin.ts): resets, and the lists of the bot's data no other tab handles, with a
 // member filter, a search, multi-select and delete (bot: admin-data.js, the Discord dashboard's lists).
 @Component({
   selector: 'app-admin-data',
@@ -30,22 +30,6 @@ import { ToastService } from '../core/toast.service';
           Niveaux : ils reviennent au prochain /reload ou à la prochaine connexion. Classement : duels
           et coups fatals effacés, les événements déjà reçus ne sont pas recomptés.
         </p>
-      </section>
-      <section class="tooltip admin-card">
-        <h2>🧹 Orphelins</h2>
-        <p>
-          @if (orphans()) {
-            {{ orphans() }} battletag(s) absent(s) de l'annuaire, avec des données rangées dessous
-            (détail dans 🚨 Anomalies).
-          } @else {
-            ✅ Aucun orphelin.
-          }
-        </p>
-        <div class="admin-actions">
-          <button type="button" class="btn ghost" [disabled]="!orphans()" (click)="cleanOrphans()">
-            🧹 Nettoyer les orphelins
-          </button>
-        </div>
       </section>
     </div>
 
@@ -101,7 +85,6 @@ import { ToastService } from '../core/toast.service';
 export class AdminDataComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
-  readonly orphans = input(0);
   readonly changed = output<void>(); // the parent reloads the state (counts, anomalies)
 
   readonly datasets = signal<AdminDataset[] | null>(null);
@@ -207,15 +190,4 @@ export class AdminDataComponent {
     }
   }
 
-  async cleanOrphans() {
-    if (!confirm('Supprimer pour de bon toutes les données rangées sous des battletags absents de l’annuaire ?')) return;
-    try {
-      const r = await this.api.adminCleanOrphans();
-      this.toast.ok(`🧹 ${r.removed} orphelin(s) supprimé(s).`);
-      await this.load();
-      this.changed.emit();
-    } catch (err) {
-      this.toast.error(`❌ ${errorText(err)}`);
-    }
-  }
 }

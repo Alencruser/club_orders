@@ -40,6 +40,9 @@ import { ToastService } from '../core/toast.service';
               @if (r.importedAt) {
                 <span class="muted small">(importées le {{ r.importedAt * 1000 | date: 'd MMM, HH:mm' }})</span>
               }
+              @if (t.recipesSeen !== undefined) {
+                <br /><span class="muted small">{{ t.recipesSeen }} recette(s) déjà vue(s) chez les joueurs</span>
+              }
             } @else {
               ❌ pas encore importées
             }

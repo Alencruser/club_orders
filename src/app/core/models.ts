@@ -256,14 +256,38 @@ export interface AdminDirectoryPlayer {
   classId: string | null;
   classLabel: string | null;
   classIcon: string | null;
-  characters: { name: string; realm: string; classKey: string; classLabel: string; level: number }[];
-  links: string[]; // « name-realm » keys linked to this player (battletag or direct link): bank, follow, duels
+  // every character, most recently active first; known: sent by the companion (class, level), else linked
+  // by hand; lastSeen: last activity received (s): companion send, bank line, follow, professions
+  characters: {
+    key: string;
+    name: string;
+    realm: string;
+    classKey: string | null;
+    classLabel: string | null;
+    level: number | null;
+    known: boolean;
+    lastSeen: number | null;
+  }[];
+  links: string[]; // character keys (names in lower case), for the search
+  lastSeen: number | null; // the player's most recent activity
 }
 export interface AdminDirectory {
   players: AdminDirectoryPlayer[];
   classes: { id: string; key: string; label: string; icon: string | null }[];
   // suggest: members whose name looks like the character's (only with the full member list)
-  unlinked: { key: string; name: string; realm: string; bank: number; follow: number; last: number; suggest?: string[] }[];
+  // waiting: battletag sent by the companion that nobody has in the directory (else seen in bank / follow)
+  unlinked: {
+    key: string;
+    name: string;
+    realm: string;
+    bank: number;
+    follow: number;
+    last: number;
+    suggest?: string[];
+    waiting?: string | null;
+    classKey?: string | null;
+    level?: number | null;
+  }[];
   members: AdminMemberHit[] | null; // every human of the server, null without the members intent
   forgotten: { key: string; name: string; realm: string; at: number; by: string | null }[];
 }
@@ -579,7 +603,7 @@ export interface AdminState {
   adminPublic: boolean;
   keyPresent: boolean;
   filters: { guild: string | null; realm: string | null };
-  pending: { prompts: number; privates: number };
+  pending: { prompts: number; privates: number; seen?: number };
   warnings: string[];
   slots: AdminSlot[];
   counts: { key: string; emoji: string; label: string; unit: string; count: number }[];
@@ -629,6 +653,7 @@ export interface AdminTools {
   blocks: { key: string; title: string; skills: { skill: number; name: string }[] }[];
   perPageChoices: number[];
   recipes: { build: string; importedAt: number | null; recipes: number; items: number } | null;
+  recipesSeen?: number; // recipes seen in the players' professions (recipes.json)
   wowhead: { cached: number; total: number; warming: boolean } | null;
   importing: boolean;
   releases: {

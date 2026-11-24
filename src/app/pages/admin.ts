@@ -194,6 +194,11 @@ const AUTO_REFRESH_MS = 60 * 1000;
             <p>
               {{ s.pending.prompts }} demande(s) en attente (battletag, annonce) ·
               {{ s.pending.privates }} message(s) privé(s) ouvert(s)
+              @if (s.pending.seen !== undefined) {
+                <br /><span class="muted small"
+                  >{{ s.pending.seen }} envoi(s) du compagnon déjà reçu(s), gardés 14 jours pour ignorer ses renvois</span
+                >
+              }
             </p>
             <div class="admin-actions">
               <button type="button" class="btn ghost" (click)="closePrivates()">
@@ -378,7 +383,7 @@ const AUTO_REFRESH_MS = 60 * 1000;
       }
 
       @if (tab() === 'data') {
-        <app-admin-data [orphans]="orphanCount()" (changed)="load(true)" />
+        <app-admin-data (changed)="load(true)" />
       }
       @if (tab() === 'spy') {
         <app-admin-spy />
