@@ -93,6 +93,13 @@ export interface NpcInfo {
   kind: string | null; // Élite, Rare, Rare élite, Boss; null: normal
 }
 
+// Sources of a pattern from Wowhead: quests that give it, NPCs that sell or drop it, and the kinds of
+// source (5 vendor, 4 quest, 2 drop…) even when Wowhead names nobody
+export interface PatternSources {
+  more: ({ quest: number; name: string; zone: string | null } | { npc: number; name: string; zone: string | null; kind: 'vendor' | 'drop' })[];
+  source: number[];
+}
+
 export interface Tooltip {
   icon: string;
   stats: [string, number][];

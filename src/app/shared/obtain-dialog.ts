@@ -1,13 +1,16 @@
 import { Component, computed, effect, HostListener, inject, input, OnDestroy, output, signal } from '@angular/core';
 import { ApiService } from '../core/api.service';
 import { DataService, money } from '../core/data.service';
-import { NpcInfo } from '../core/models';
+import { NpcInfo, PatternSources } from '../core/models';
 
 const WOWHEAD = 'https://www.wowhead.com/forever/fr';
 const TRAINERS_SHOWN = 5;
 
-// NPCs already received, kept while the page is open: reopening a window is instant
+// NPCs and pattern sources already received, kept while the page is open: reopening a window is instant
 const known = new Map<string, NpcInfo>();
+const knownPatterns = new Map<string, PatternSources>();
+// kinds of source Wowhead gives without naming anyone
+const KINDS: Record<number, string> = { 2: 'butin', 4: 'récompense de quête', 5: 'vendu par un marchand', 7: 'découverte', 16: 'pêche', 21: 'butin' };
 
 // « 📍 Obtention » of a recipe (recipe card): the pattern, the trainers and vendors (zone, position),
 // and the monsters that drop the pattern, best drop rate first (name, type and level, zone, rate). Every
@@ -96,13 +99,24 @@ const known = new Map<string, NpcInfo>();
             <p>🎓 Appris chez un formateur · métier {{ fee[1] }} · {{ money(fee[0]) }}</p>
           }
 
-          @if (trainers().length || vendors().length) {
-            <h3>🧑 PNJ</h3>
+          @if (trainers().length || vendors().length || quests().length) {
+            <h3>🧑 PNJ et quêtes</h3>
             <ul>
+              @for (q of quests(); track q.quest) {
+                <li>
+                  ❗ Quête <a [href]="wowhead + '/quest=' + q.quest" target="_blank" rel="noopener">« {{ q.name }} » ↗</a>
+                  @if (q.zone) {
+                    · {{ q.zone }}
+                  }
+                </li>
+              }
               @for (v of vendors(); track v.id) {
                 <li>
                   🛒 <a [href]="wowhead + '/npc=' + v.id" target="_blank" rel="noopener">{{ v.npc?.name ?? '…' }} ↗</a>
-                  · {{ place(v.npc) }} · stock limité ({{ v.stock }})
+                  · {{ place(v.npc, v.zone) }}
+                  @if (v.stock) {
+                    · stock limité ({{ v.stock }})
+                  }
                 </li>
               }
               @for (t of shownTrainers(); track t.id) {
@@ -138,8 +152,8 @@ const known = new Map<string, NpcInfo>();
                         <span class="ob-kind" [class.ob-elite]="m.npc.kind"> ({{ k }})</span>
                       }
                     </td>
-                    <td>{{ m.npc ? (m.npc.zone ?? '—') : '…' }}</td>
-                    <td class="rate">{{ rate(m.rate) }}</td>
+                    <td>{{ m.npc ? (m.npc.zone ?? m.zone ?? '—') : (m.zone ?? '…') }}</td>
+                    <td class="rate">{{ m.rate === null ? '—' : rate(m.rate) }}</td>
                   </tr>
                 }
               </tbody>
@@ -150,10 +164,17 @@ const known = new Map<string, NpcInfo>();
             <p class="small">🎲 Tombe aussi en butin aléatoire sur les monstres de niveau proche.</p>
           }
 
+          @if (otherKinds().length && r.scroll) {
+            <p class="small">
+              🔎 {{ mobs().length || vendors().length || quests().length || trainers().length || worldDrop() ? 'Aussi' : 'Source' }} : {{ otherKinds().join(', ') }}, sans plus de détail ;
+              <a [href]="wowhead + '/item=' + r.scroll[0]" target="_blank" rel="noopener">voir la fiche du patron ↗</a>
+            </p>
+          }
+
           @if (nothing()) {
             <p class="muted">
               @if (r.scroll) {
-                Pas de détail connu pour ce patron (vendeur, quête…) :
+                Ni le jeu ni Wowhead ne disent où trouver ce patron :
                 <a [href]="wowhead + '/item=' + r.scroll[0]" target="_blank" rel="noopener">voir sa fiche Wowhead ↗</a>
               } @else {
                 Source inconnue :
@@ -162,8 +183,8 @@ const known = new Map<string, NpcInfo>();
             </p>
           }
 
-          @if (loading()) {
-            <p class="muted small">Chargement des PNJ depuis Wowhead…</p>
+          @if (loading() || patternLoading()) {
+            <p class="muted small">Chargement depuis Wowhead…</p>
           }
         }
       </section>
@@ -182,25 +203,64 @@ export class ObtainDialogComponent implements OnDestroy {
   readonly allTrainers = signal(false);
   private readonly npcs = signal<Record<string, NpcInfo>>(Object.fromEntries(known));
   private readonly pending = signal(0);
+  private readonly patterns = signal<Record<string, PatternSources>>(Object.fromEntries(knownPatterns));
+  readonly patternLoading = signal(false);
   private timer: ReturnType<typeof setTimeout> | null = null;
   private alive = true;
 
   readonly recipe = computed(() => this.data.recipe(this.spell()));
   private readonly scrollId = computed(() => this.recipe()?.scroll?.[0] ?? null);
 
+  // Wowhead's details for the pattern (null: not received yet, or no pattern)
+  private readonly sources = computed(() => {
+    const id = this.scrollId();
+    return id ? ((this.patterns()[id] as PatternSources | undefined) ?? null) : null;
+  });
+  private readonly whNpcs = computed(() =>
+    (this.sources()?.more ?? []).filter((m): m is Extract<PatternSources['more'][number], { npc: number }> => 'npc' in m),
+  );
+  readonly quests = computed(() =>
+    (this.sources()?.more ?? []).filter((m): m is Extract<PatternSources['more'][number], { quest: number }> => 'quest' in m),
+  );
+
+  // SkillUp's drop rates first (best first), then the monsters only Wowhead names (rate unknown)
   readonly mobs = computed(() => {
     const c = this.data.catalog();
     const id = this.scrollId();
     const all = this.npcs();
-    return (id && c?.scrollDrops[id] ? [...c.scrollDrops[id]] : [])
-      .sort((a, b) => b[1] - a[1])
-      .map(([npc, rate]) => ({ id: String(npc), rate, npc: (all[npc] as NpcInfo | undefined) ?? null }));
+    const drops = (id && c?.scrollDrops[id] ? [...c.scrollDrops[id]] : []).sort((a, b) => b[1] - a[1]);
+    const list: { id: string; rate: number | null; zone: string | null; npc: NpcInfo | null }[] = drops.map(([npc, rate]) => ({
+      id: String(npc),
+      rate,
+      zone: null,
+      npc: (all[npc] as NpcInfo | undefined) ?? null,
+    }));
+    for (const m of this.whNpcs())
+      if (m.kind === 'drop' && !list.some((x) => x.id === String(m.npc)))
+        list.push({ id: String(m.npc), rate: null, zone: m.zone, npc: (all[m.npc] as NpcInfo | undefined) ?? null });
+    return list;
   });
   readonly vendors = computed(() => {
     const c = this.data.catalog();
     const id = this.scrollId();
     const all = this.npcs();
-    return (id && c?.limited[id] ? c.limited[id] : []).map(([npc, stock]) => ({ id: String(npc), stock, npc: (all[npc] as NpcInfo | undefined) ?? null }));
+    const list: { id: string; stock: number | null; zone: string | null; npc: NpcInfo | null }[] = (
+      id && c?.limited[id] ? c.limited[id] : []
+    ).map(([npc, stock]) => ({ id: String(npc), stock, zone: null, npc: (all[npc] as NpcInfo | undefined) ?? null }));
+    for (const m of this.whNpcs())
+      if (m.kind === 'vendor' && !list.some((x) => x.id === String(m.npc)))
+        list.push({ id: String(m.npc), stock: null, zone: m.zone, npc: (all[m.npc] as NpcInfo | undefined) ?? null });
+    return list;
+  });
+  // kinds of source Wowhead knows but nothing above details
+  readonly otherKinds = computed(() => {
+    const s = this.sources();
+    if (!s) return [];
+    const shown = new Set<string>();
+    if (this.vendors().length) shown.add(KINDS[5]);
+    if (this.quests().length) shown.add(KINDS[4]);
+    if (this.mobs().length || this.worldDrop()) shown.add(KINDS[2]);
+    return [...new Set(s.source.map((k) => KINDS[k]).filter((k) => k && !shown.has(k)))];
   });
   readonly trainers = computed(() => {
     const c = this.data.catalog();
@@ -224,6 +284,9 @@ export class ObtainDialogComponent implements OnDestroy {
       !this.vendors().length &&
       !this.trainers().length &&
       !this.worldDrop() &&
+      !this.quests().length &&
+      !this.otherKinds().length &&
+      !this.patternLoading() &&
       !(this.recipe()?.fee && !this.recipe()?.scroll),
   );
   readonly loading = computed(() => this.pending() > 0);
@@ -237,11 +300,16 @@ export class ObtainDialogComponent implements OnDestroy {
     return [
       ...(id ? (c?.scrollDrops[id] ?? []) : []).map(([npc]) => npc),
       ...(id ? (c?.limited[id] ?? []) : []).map(([npc]) => npc),
+      ...this.whNpcs().map((m) => m.npc),
       ...((set && c?.trainerSets?.[set]) || []),
     ].map(String);
   });
 
   constructor() {
+    effect(() => {
+      const id = this.scrollId();
+      if (id && !knownPatterns.has(String(id))) queueMicrotask(() => this.fetchPattern(String(id), 0));
+    });
     effect(() => {
       const ids = this.ids().filter((id) => !known.has(id));
       queueMicrotask(() => this.fetch(ids, 0));
@@ -277,9 +345,29 @@ export class ObtainDialogComponent implements OnDestroy {
     this.timer = setTimeout(() => this.fetch(missing, round + 1), 3000);
   }
 
-  place(n: NpcInfo | null) {
-    if (!n) return '…';
-    if (!n.zone) return 'zone inconnue';
+  // Wowhead's sources of the pattern (asked from the bot, which may have to fetch them first)
+  private async fetchPattern(id: string, round: number) {
+    if (!this.alive) return;
+    this.patternLoading.set(true);
+    let missing = true;
+    try {
+      const res = await this.api.patterns([id]);
+      if (res.patterns[id]) {
+        knownPatterns.set(id, res.patterns[id]);
+        this.patterns.set(Object.fromEntries(knownPatterns));
+      }
+      missing = res.missing.includes(id);
+    } catch {
+      missing = true;
+    }
+    if (!this.alive) return;
+    if (!missing || round >= 10) return this.patternLoading.set(false);
+    setTimeout(() => this.fetchPattern(id, round + 1), 2500);
+  }
+
+  place(n: NpcInfo | null, zone: string | null = null) {
+    if (!n) return zone ?? '…';
+    if (!n.zone) return zone ?? 'zone inconnue';
     return n.coords ? `${n.zone} · ${n.coords[0]}, ${n.coords[1]}` : n.zone;
   }
 
