@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService, errorText } from '../core/api.service';
 import { AdminChannel, AdminSpy, AdminSpyBot } from '../core/models';
 import { ToastService } from '../core/toast.service';
+import { AdminSettingsBlockComponent } from './admin-settings';
 
 const REFRESH_MS = 15 * 1000; // live talk times while the tab is open
 const PERIODS = ['1h', '2h', '3h', '6h'];
@@ -13,7 +14,7 @@ const PERIODS = ['1h', '2h', '3h', '6h'];
 // actions as /espionnage, /espionnage2 and /espionnage3.
 @Component({
   selector: 'app-admin-spy',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, AdminSettingsBlockComponent],
   // only loaded with /admin (lazy chunk), not in the global stylesheet
   styles: `
     .spy-head {
@@ -75,6 +76,7 @@ const PERIODS = ['1h', '2h', '3h', '6h'];
         salon des rapports de chaque espion.
       </p>
       <div class="admin-grid">
+        <app-admin-settings-block section="spy" />
         @for (b of s.bots; track b.key) {
           <section class="tooltip admin-card">
             <div class="spy-head">

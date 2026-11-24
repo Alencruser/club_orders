@@ -186,6 +186,16 @@ export interface AdminSpy {
   bots: AdminSpyBot[];
   now: number;
 }
+// Server settings changed on /admin (bot settings.js), in minutes; 0 turns off what can be turned off
+export interface AdminSettingsValues {
+  spy: { statusMin: number; reminderMin: number };
+  activity: { remindBeforeMin: number; expireAfterMin: number };
+}
+export interface AdminSettings {
+  settings: AdminSettingsValues;
+  defaults: AdminSettingsValues;
+  limits: Record<string, Record<string, [number, number, boolean]>>; // [min, max, 0 allowed]
+}
 // 🚶 Suivi tab: every follow session, to ignore or delete
 export interface AdminFollowSession {
   id: string;

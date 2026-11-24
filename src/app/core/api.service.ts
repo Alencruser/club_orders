@@ -10,6 +10,8 @@ import {
   AdminSpy,
   AdminTiers,
   AdminFollow,
+  AdminSettings,
+  AdminSettingsValues,
   AdminDataset,
   AdminReleaseEntry,
   AdminState,
@@ -192,6 +194,14 @@ export class ApiService {
   }
   adminSpyAction(bot: string, action: 'start' | 'stop' | 'report' | 'post', channelId: string | null, kind?: string) {
     return this.post<{ result: unknown; spy: AdminSpy }>('/api/admin/spy/action', { bot, action, channelId, kind });
+  }
+
+  // ⚙️ Réglages (and the shared block of 🕵️ Espionnage)
+  adminSettings() {
+    return this.get<AdminSettings>('/api/admin/settings');
+  }
+  adminSaveSettings(section: keyof AdminSettingsValues, values: Record<string, number>) {
+    return this.post<AdminSettings>('/api/admin/settings', { section, values });
   }
 
   // 🚶 Suivi tab: a session is ignored (counted nowhere) or deleted, its time never changes
