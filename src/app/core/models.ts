@@ -240,17 +240,20 @@ export interface AdminDirectoryPlayer {
   avatar: string | null;
   inGuild: boolean;
   battletag: string;
+  noBattletag?: boolean; // only characters linked by hand on the site
   classKey: string | null;
   classId: string | null;
   classLabel: string | null;
   classIcon: string | null;
   characters: { name: string; realm: string; classKey: string; classLabel: string; level: number }[];
-  links: string[]; // « name-realm » keys linked to this battletag (bank, follow, duels)
+  links: string[]; // « name-realm » keys linked to this player (battletag or direct link): bank, follow, duels
 }
 export interface AdminDirectory {
   players: AdminDirectoryPlayer[];
   classes: { id: string; key: string; label: string; icon: string | null }[];
-  unlinked: { key: string; name: string; realm: string; bank: number; follow: number; last: number }[];
+  // suggest: members whose name looks like the character's (only with the full member list)
+  unlinked: { key: string; name: string; realm: string; bank: number; follow: number; last: number; suggest?: string[] }[];
+  members: AdminMemberHit[] | null; // every human of the server, null without the members intent
   forgotten: { key: string; name: string; realm: string; at: number; by: string | null }[];
 }
 export interface AdminMemberHit {

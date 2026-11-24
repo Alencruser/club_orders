@@ -97,7 +97,12 @@ import { ToastService } from '../core/toast.service';
         <section class="tooltip admin-card">
           <h2>➕ Ajouter un membre</h2>
           <div class="admin-actions">
-            <input [(ngModel)]="memberQuery" placeholder="Pseudo Discord (2 lettres min.)" (keyup.enter)="findMembers()" />
+            <input
+              [(ngModel)]="memberQuery"
+              [placeholder]="d.members ? 'Pseudo Discord' : 'Pseudo Discord (2 lettres min.)'"
+              (keyup.enter)="findMembers()"
+              (input)="d.members && findMembers()"
+            />
             <button type="button" class="btn ghost" (click)="findMembers()">Chercher</button>
           </div>
           <ul class="admin-list">
@@ -155,7 +160,7 @@ import { ToastService } from '../core/toast.service';
                   @if (!p.inGuild) {
                     <span class="bad small"> · plus sur le serveur</span>
                   }
-                  <br /><span class="muted small">{{ p.battletag }}</span>
+                  <br /><span class="muted small">{{ p.noBattletag ? 'sans battletag' : p.battletag }}</span>
                 </span>
                 @if (p.classIcon) {
                   <img class="admin-dir-class" [src]="p.classIcon" [alt]="p.classLabel ?? ''" [title]="p.classLabel ?? ''" />
@@ -165,10 +170,20 @@ import { ToastService } from '../core/toast.service';
               @if (open() === p.userId) {
                 <div class="admin-dir-detail">
                   <div class="admin-actions">
-                    <button type="button" class="btn ghost" (click)="startEdit(p.userId, p.name, p)">✏️ Modifier</button>
-                    <label><input type="checkbox" [(ngModel)]="cascade" /> avec ses niveaux, persos et classement</label>
-                    <button type="button" class="btn danger" [disabled]="busy()" (click)="removePlayer(p)">🗑️ Supprimer</button>
+                    <button type="button" class="btn ghost" (click)="startEdit(p.userId, p.name, p)">
+                      {{ p.noBattletag ? '➕ Battletag' : '✏️ Modifier' }}
+                    </button>
+                    @if (!p.noBattletag) {
+                      <label><input type="checkbox" [(ngModel)]="cascade" /> avec ses niveaux, persos et classement</label>
+                      <button type="button" class="btn danger" [disabled]="busy()" (click)="removePlayer(p)">🗑️ Supprimer</button>
+                    }
                   </div>
+                  @if (p.noBattletag) {
+                    <p class="muted small">
+                      Relié à la main, sans battletag : il garde ses persos le jour où il donne son battletag. Pour le retirer,
+                      délie ses persos ✂️.
+                    </p>
+                  }
                   <h4>Persos connus (addon)</h4>
                   <ul class="admin-list">
                     @for (c of p.characters; track c.name + c.realm) {
@@ -205,11 +220,16 @@ import { ToastService } from '../core/toast.service';
       </section>
 
       <div class="admin-grid">
-        <section class="tooltip admin-card">
+        <section class="tooltip admin-card wide">
           <h2>🧭 Persos sans joueur ({{ d.unlinked.length }})</h2>
           <p class="muted small">
             Vus dans la banque ou le suivi, mais le bot ne sait pas à qui ils sont : leurs dépôts et leur
-            temps de suivi ne comptent pour personne. Relie-les à leur joueur.
+            temps de suivi ne comptent pour personne. Relie-les à un membre Discord, même sans battletag : le lien
+            reste quand il donnera le sien.
+            @if (!d.members) {
+              <br />Seuls les joueurs de l'annuaire sont proposés : active la liste complète des membres
+              (MEMBERS_INTENT) pour choisir n'importe qui, avec des suggestions.
+            }
           </p>
           <ul class="admin-list">
             @for (u of d.unlinked; track u.key) {
@@ -220,9 +240,25 @@ import { ToastService } from '../core/toast.service';
                   @if (u.follow) { · {{ u.follow }} suivi(s) }</span></span
                 >
                 <select [(ngModel)]="linkTo[u.key]">
-                  <option [ngValue]="undefined">Joueur…</option>
-                  @for (p of d.players; track p.userId) {
-                    <option [ngValue]="p.userId">{{ p.name }}</option>
+                  <option [ngValue]="undefined">Membre…</option>
+                  @if (u.suggest?.length) {
+                    <optgroup label="⭐ Ressemble à">
+                      @for (id of u.suggest; track id) {
+                        <option [ngValue]="id">{{ memberName(id) }}</option>
+                      }
+                    </optgroup>
+                  }
+                  <optgroup label="Annuaire">
+                    @for (p of d.players; track p.userId) {
+                      <option [ngValue]="p.userId">{{ p.name }}{{ p.noBattletag ? ' (sans battletag)' : '' }}</option>
+                    }
+                  </optgroup>
+                  @if (others().length) {
+                    <optgroup label="Autres membres du serveur">
+                      @for (m of others(); track m.userId) {
+                        <option [ngValue]="m.userId">{{ m.name }} · @{{ m.username }}</option>
+                      }
+                    </optgroup>
                   }
                 </select>
                 <button type="button" class="btn ghost" [disabled]="busy() || !linkTo[u.key]" (click)="link(u.key, linkTo[u.key]!)">
@@ -295,8 +331,20 @@ export class AdminDirectoryComponent {
     );
   });
 
+  // members of the server not in the directory yet (only with the full member list)
+  readonly others = computed(() => {
+    const d = this.dir();
+    const known = new Set((d?.players ?? []).map((p) => p.userId));
+    return (d?.members ?? []).filter((m) => !known.has(m.userId));
+  });
+
   constructor() {
     this.load();
+  }
+
+  memberName(userId: string) {
+    const d = this.dir();
+    return d?.members?.find((m) => m.userId === userId)?.name ?? d?.players.find((p) => p.userId === userId)?.name ?? userId;
   }
 
   async load() {
@@ -314,6 +362,13 @@ export class AdminDirectoryComponent {
   }
 
   async findMembers() {
+    const all = this.dir()?.members;
+    if (all) {
+      // full list: filtered here, no call to the bot
+      const q = this.memberQuery.trim().toLowerCase();
+      this.hits.set(q ? all.filter((m) => m.name.toLowerCase().includes(q) || m.username.toLowerCase().includes(q)).slice(0, 15) : []);
+      return;
+    }
     if (this.memberQuery.trim().length < 2) return;
     try {
       this.hits.set(await this.api.adminDirectoryMembers(this.memberQuery.trim()));
@@ -358,7 +413,8 @@ export class AdminDirectoryComponent {
 
   async link(key: string, userId: string | null) {
     if (!userId && !confirm(`Délier ${key} ? Ses dépôts et son suivi ne compteront plus pour ce joueur.`)) return;
-    await this.run(() => this.api.adminDirectoryAction('link', { key, userId }), userId ? `🧭 ${key} relié.` : `✂️ ${key} délié.`);
+    const done = userId ? `🧭 ${key} relié à ${this.memberName(userId)}.` : `✂️ ${key} délié.`;
+    await this.run(() => this.api.adminDirectoryAction('link', { key, userId }), done);
     delete this.linkTo[key];
   }
 
