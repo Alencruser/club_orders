@@ -155,8 +155,49 @@ const IDLE_DAYS = 30; // 💤 after this long without anything received
         </section>
       }
 
+      @if (idleList().length) {
+        <section class="tooltip admin-card wide">
+          <h2>💤 Persos inactifs ({{ idleList().length }})</h2>
+          <p class="muted small">
+            Rien reçu depuis plus de {{ idleDays }} jours (ni connexion, ni banque, ni suivi, ni métiers), le plus ancien
+            d'abord : peut-être supprimés en jeu. Les connexions ne sont suivies que depuis le 24/11 : un perso juste pas joué
+            depuis apparaît aussi, vérifie avec son joueur. Coche ceux à mettre à la corbeille ; ils restent rétablissables, et
+            leur historique compte toujours pour leur joueur.
+          </p>
+          <ul class="admin-list">
+            @for (c of idleList(); track c.key) {
+              <li class="admin-dir-hit">
+                <label class="grow">
+                  <input type="checkbox" [checked]="idlePicked().has(c.key)" (change)="toggleIdle(c.key)" />
+                  <b>{{ c.name }}</b>
+                  <span class="muted small">{{ c.classLabel ? c.classLabel + (c.level ? ' niv. ' + c.level : '') : 'relié à la main' }} · à {{ c.player }} · {{ ago(c.lastSeen) }}</span>
+                </label>
+              </li>
+            }
+          </ul>
+          <div class="admin-actions">
+            <button type="button" class="btn ghost" (click)="pickAllIdle()">
+              {{ idlePicked().size === idleList().length ? 'Tout décocher' : 'Tout cocher' }}
+            </button>
+            <button type="button" class="btn danger" [disabled]="busy() || !idlePicked().size" (click)="forgetIdle()">
+              🪦 Mettre à la corbeille ({{ idlePicked().size }})
+            </button>
+          </div>
+        </section>
+      }
+
       <section class="tooltip admin-card wide">
         <h2>📇 Joueurs ({{ shown().length }}/{{ d.players.length }})</h2>
+        <div class="admin-actions">
+          <label class="small"
+            >Trier par
+            <select [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)">
+              <option value="name">nom</option>
+              <option value="recent">activité la plus récente</option>
+              <option value="old">activité la plus ancienne</option>
+            </select>
+          </label>
+        </div>
         <ul class="admin-dir">
           @for (p of shown(); track p.userId) {
             <li [class.open]="open() === p.userId">
@@ -336,9 +377,26 @@ export class AdminDirectoryComponent {
     this.query.set(v);
   }
 
+  readonly sortBy = signal<'name' | 'recent' | 'old'>('name');
+  readonly idlePicked = signal<Set<string>>(new Set());
+
+  // every inactive character of every player, the oldest first (never seen: first of all)
+  readonly idleList = computed(() =>
+    (this.dir()?.players ?? [])
+      .flatMap((p) => p.characters.filter((c) => this.idle(c.lastSeen)).map((c) => ({ ...c, player: p.name })))
+      .sort((a, b) => (a.lastSeen ?? 0) - (b.lastSeen ?? 0) || a.name.localeCompare(b.name)),
+  );
+
   readonly shown = computed(() => {
     const q = this.query().trim().toLowerCase();
-    const players = this.dir()?.players ?? [];
+    const sort = this.sortBy();
+    const players = [...(this.dir()?.players ?? [])].sort((a, b) =>
+      sort === 'recent'
+        ? (b.lastSeen ?? 0) - (a.lastSeen ?? 0)
+        : sort === 'old'
+          ? (a.lastSeen ?? 0) - (b.lastSeen ?? 0)
+          : a.name.localeCompare(b.name),
+    );
     if (!q) return players;
     return players.filter(
       (p) =>
@@ -362,9 +420,30 @@ export class AdminDirectoryComponent {
 
   readonly idleDays = IDLE_DAYS;
 
+  toggleIdle(key: string) {
+    const next = new Set(this.idlePicked());
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    this.idlePicked.set(next);
+  }
+
+  pickAllIdle() {
+    const all = this.idleList();
+    this.idlePicked.set(this.idlePicked().size === all.length ? new Set() : new Set(all.map((c) => c.key)));
+  }
+
+  async forgetIdle() {
+    const picked = this.idleList().filter((c) => this.idlePicked().has(c.key));
+    if (!picked.length) return;
+    const names = picked.map((c) => c.name);
+    if (!confirm(`Mettre ${names.length} perso(s) à la corbeille ?\n\n${names.join(', ')}\n\nRétablissables depuis 🪦 Corbeille.`)) return;
+    const ok = await this.run(() => this.api.adminDirectoryAction('forget-many', { names }), `🪦 ${names.length} perso(s) à la corbeille.`);
+    if (ok) this.idlePicked.set(new Set());
+  }
+
   // « il y a 3 j », from a date in seconds
   ago(at: number | null) {
-    if (!at) return 'aucune activité reçue';
+    if (!at) return 'pas vu depuis le 24/11 (début du suivi des connexions)';
     const s = Math.max(0, Date.now() / 1000 - at);
     if (s < 3600) return 'actif il y a moins d’une heure';
     if (s < 86400) return `actif il y a ${Math.floor(s / 3600)} h`;

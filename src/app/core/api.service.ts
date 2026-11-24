@@ -236,7 +236,7 @@ export class ApiService {
   async adminDirectoryMembers(q: string) {
     return (await this.get<{ members: AdminMemberHit[] }>(`/api/admin/directory/members?q=${encodeURIComponent(q)}`)).members;
   }
-  adminDirectoryAction(action: 'player' | 'remove' | 'link' | 'forget' | 'restore', body: unknown) {
+  adminDirectoryAction(action: 'player' | 'remove' | 'link' | 'forget' | 'forget-many' | 'restore', body: unknown) {
     return this.post<{ result: unknown; directory: AdminDirectory }>(`/api/admin/directory/${action}`, body);
   }
 
