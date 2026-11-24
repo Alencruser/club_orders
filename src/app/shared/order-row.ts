@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService, errorText } from '../core/api.service';
 import { DataService } from '../core/data.service';
 import { Order } from '../core/models';
-import { OrdersService } from '../core/orders.service';
+import { isReady, OrdersService } from '../core/orders.service';
 import { ToastService } from '../core/toast.service';
 import { IconComponent, MaterialsComponent, classColor } from './ui';
 
@@ -31,6 +31,11 @@ export const STATUS: Record<string, { icon: string; text: string }> = {
               >{{ o.qty }} × {{ o.item.name }}</strong
             >
             <span class="status s-{{ o.status }}">{{ status().icon }} {{ status().text }}</span>
+            @if (o.status === 'done' && o.received) {
+              <span class="status s-done" [title]="receivedTitle()">📬 Reçue</span>
+            } @else if (ready()) {
+              <span class="status s-pending">📦 {{ side() === 'buyer' ? 'À récupérer' : 'À remettre' }}</span>
+            }
             @if (fresh()) {
               <span class="fresh" title="Commande passée il y a moins de 24 heures"
                 >🔥 Nouvelle</span
@@ -39,7 +44,7 @@ export const STATUS: Record<string, { icon: string; text: string }> = {
             @if (o.archived) {
               <span
                 class="muted small"
-                title="Gardée dans ce navigateur : le bot oublie les commandes terminées après 30 jours"
+                title="Gardée dans ce navigateur : le bot l’avait oubliée (avant novembre 2026)"
                 >archivée</span
               >
             }
@@ -52,7 +57,7 @@ export const STATUS: Record<string, { icon: string; text: string }> = {
               pour <span [style.color]="classColor(o.buyer.class)">{{ o.buyer.name }}</span> · ton
               perso {{ o.artisan.name }}
             }
-            · {{ (o.status === 'pending' ? o.createdAt : o.updatedAt) | date: 'd MMM, HH:mm' }}
+            · {{ (o.status === 'pending' ? o.createdAt : (o.received?.at ?? o.updatedAt)) | date: 'd MMM, HH:mm' }}
           </div>
           @if (o.note) {
             <div class="small">✉️ « {{ o.note }} »</div>
@@ -70,6 +75,17 @@ export const STATUS: Record<string, { icon: string; text: string }> = {
           <button type="button" class="btn ghost" (click)="open.set(!open())">
             {{ open() ? 'Masquer' : 'Composants' }}
           </button>
+          @if (ready()) {
+            <button
+              type="button"
+              class="btn gold"
+              [disabled]="busy()"
+              [title]="side() === 'buyer' ? 'Tu as l’objet : la commande est terminée' : 'Tu l’as donné à l’acheteur (courrier ou échange)'"
+              (click)="markReceived(true)"
+            >
+              📬 {{ side() === 'buyer' ? 'J’ai reçu' : 'Remise' }}
+            </button>
+          }
           @if (o.status === 'pending' && !o.archived) {
             @if (side() === 'buyer') {
               <button type="button" class="btn danger" [disabled]="busy()" (click)="cancel()">
@@ -154,6 +170,13 @@ export class OrderRowComponent {
   reasonText = '';
 
   readonly status = computed(() => STATUS[this.order().status] ?? STATUS['pending']);
+  readonly ready = computed(() => isReady(this.order()));
+  readonly receivedTitle = computed(() => {
+    const r = this.order().received;
+    if (!r) return '';
+    const who = r.by === 'auto' ? 'd’office, 14 jours après' : `confirmée par ${r.by === 'buyer' ? 'l’acheteur' : 'l’artisan'}${r.name ? ` (${r.name})` : ''}`;
+    return `Reçue le ${new Date(r.at).toLocaleDateString('fr-FR')} : ${who}`;
+  });
   readonly materials = computed(() =>
     this.data.materials([{ spell: this.order().item.spellId, qty: this.order().qty }]),
   );
@@ -164,6 +187,21 @@ export class OrderRowComponent {
   startReply() {
     this.replyText = this.order().reply ?? '';
     this.editing.set(true);
+  }
+
+  // remise confirmée, avec « ↩ Annuler » pendant 10 s
+  async markReceived(received: boolean) {
+    this.busy.set(true);
+    try {
+      this.orders.upsert(await this.api.received(this.order().id, received));
+      if (received)
+        this.toast.done(this.side() === 'buyer' ? '📬 Commande reçue : bien joué !' : '📬 Remise confirmée', () => void this.markReceived(false));
+      else this.toast.ok('↩ Remise annulée : la commande est de nouveau à récupérer');
+    } catch (err) {
+      this.toast.error(`❌ ${errorText(err)}`);
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   async cancel() {

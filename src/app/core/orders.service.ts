@@ -49,8 +49,11 @@ export function refreshOrders(session: SessionService, orders: OrdersService, da
 
 const HISTORY_MAX = 300;
 
-// Orders placed and received. The bot forgets finished orders after 30 days: the ones placed are kept
-// in this browser (history), marked "archived" once the bot no longer has them.
+// done by the artisan, not handed over yet (archived copies: the bot no longer has them)
+export const isReady = (o: Order) => o.status === 'done' && !o.received && !o.archived;
+
+// Orders placed and received. The bot keeps every order; the ones placed are also kept in this browser
+// (history), marked "archived" when the bot no longer has them (it used to forget them after 30 days).
 @Injectable({ providedIn: 'root' })
 export class OrdersService {
   private api = inject(ApiService);
@@ -62,11 +65,9 @@ export class OrdersService {
   private userId: string | null = null;
 
   readonly placedPending = computed(() => this.placed().filter((o) => o.status === 'pending'));
-  readonly placedPast = computed(() => this.placed().filter((o) => o.status !== 'pending'));
-  // placed orders done in the last 7 days: ready to pick up (home card, My orders « À récupérer »)
-  readonly placedReady = computed(() =>
-    this.placedPast().filter((o) => o.status === 'done' && Date.now() - o.updatedAt < 7 * 86400000),
-  );
+  // done and not confirmed received yet: to pick up (home card, My orders « À récupérer »)
+  readonly placedReady = computed(() => this.placed().filter((o) => isReady(o)));
+  readonly placedPast = computed(() => this.placed().filter((o) => o.status !== 'pending' && !isReady(o)));
   readonly receivedPending = computed(() => this.received().filter((o) => o.status === 'pending'));
   readonly receivedPast = computed(() => this.received().filter((o) => o.status !== 'pending'));
 

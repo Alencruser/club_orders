@@ -146,7 +146,10 @@ export interface Order {
   status: OrderStatus;
   reason: string;
   reply?: string;
-  archived?: boolean; // kept only in this browser: the bot forgot it (30 days)
+  readyAt?: number; // done since (ms)
+  // handed over: confirmed by the buyer, the artisan, or automatically after 14 days
+  received?: { at: number; by: 'buyer' | 'artisan' | 'auto'; name: string | null };
+  archived?: boolean; // kept only in this browser (from the time the bot forgot finished orders)
 }
 
 // Suggestion or bug sent from the site (read on the hidden /feedback page)

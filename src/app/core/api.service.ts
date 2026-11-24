@@ -94,6 +94,11 @@ export class ApiService {
     return (await this.post<{ order: Order }>(`/api/orders/${id}/cancel`, {})).order;
   }
 
+  // the order was handed over (received false: undo)
+  received(id: string, received: boolean) {
+    return this.post<{ order: Order }>(`/api/orders/${id}/received`, { received }).then((r) => r.order);
+  }
+
   async setStatus(id: string, status: 'done' | 'refused', reason = '') {
     return (await this.post<{ order: Order }>(`/api/orders/${id}/status`, { status, reason }))
       .order;

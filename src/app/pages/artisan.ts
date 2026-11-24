@@ -122,7 +122,7 @@ import { AchievementsSummary } from '../core/models';
       @for (o of orders.receivedPast(); track o.id) {
         <app-order [order]="o" side="artisan" />
       } @empty {
-        <p class="muted">Aucune commande traitée ces 30 derniers jours.</p>
+        <p class="muted">Aucune commande traitée pour l’instant.</p>
       }
     }
   `,

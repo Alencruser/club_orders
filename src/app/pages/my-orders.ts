@@ -5,8 +5,8 @@ import { OrdersService } from '../core/orders.service';
 import { OrderRowComponent } from '../shared/order-row';
 import { MaterialsComponent } from '../shared/ui';
 
-// Orders placed: current ones (cancel) with the total of their materials, the ones done in the last 7
-// days to pick up (« À récupérer »), and past ones.
+// Orders placed: current ones (cancel) with the total of their materials, the ones done to pick up
+// (« À récupérer », until the buyer or the artisan confirms it was handed over), and past ones.
 @Component({
   selector: 'app-my-orders',
   imports: [RouterLink, OrderRowComponent, MaterialsComponent],
@@ -29,7 +29,10 @@ import { MaterialsComponent } from '../shared/ui';
       @if (orders.placedReady().length) {
         <section class="ready-orders">
           <h2>📦 À récupérer ({{ orders.placedReady().length }})</h2>
-          <p class="muted small">Faites par l’artisan ces 7 derniers jours : passe les chercher.</p>
+          <p class="muted small">
+            Faites par l’artisan : passe les chercher, puis confirme avec 📬 J’ai reçu. Sans confirmation, elles
+            sont marquées reçues au bout de 14 jours.
+          </p>
           @for (o of orders.placedReady(); track o.id) {
             <app-order [order]="o" side="buyer" />
           }
@@ -61,8 +64,8 @@ import { MaterialsComponent } from '../shared/ui';
         <p class="muted">Pas encore d’historique.</p>
       }
       <p class="muted small">
-        Le bot oublie les commandes terminées après 30 jours ; ce navigateur les garde (« archivée
-        »).
+        Le bot garde toutes tes commandes. « archivée » : une ancienne commande que seul ce navigateur avait
+        gardée.
       </p>
     }
   `,
