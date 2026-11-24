@@ -36,6 +36,7 @@ export interface Recipe {
   o: [number, number] | null; // output: [itemId, quantity]
   scroll: [number, number] | null; // [recipe item, profession level]
   fee: [number, number] | null; // [trainer price in copper, profession level]
+  tr?: number | null; // set of trainers who teach it (Catalog.trainerSets)
 }
 
 export interface ItemInfo {
@@ -57,7 +58,8 @@ export interface Catalog {
   areas: Record<string, string>;
   scrollDrops: Record<string, [number, number][]>;
   worldDrops: number[];
-  limited: Record<string, [number, number][]>;
+  limited: Record<string, [number, number][]>; // pattern → [vendor NPC, stock]
+  trainerSets?: Record<string, number[]>; // NPC ids
   professions: Record<string, string>;
   blocks: { key: string; title: string; skills: number[] }[];
 }
@@ -82,6 +84,15 @@ export interface Artisan {
 }
 
 // Wowhead tooltip, cached by the bot.
+// A trainer, vendor or monster, from its Wowhead page (« 📍 Obtention »)
+export interface NpcInfo {
+  name: string;
+  zone: string | null;
+  coords: [number, number] | null;
+  level: string | null; // "37", "8 - 12", "??"
+  kind: string | null; // Élite, Rare, Rare élite, Boss; null: normal
+}
+
 export interface Tooltip {
   icon: string;
   stats: [string, number][];

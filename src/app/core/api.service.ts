@@ -28,6 +28,7 @@ import {
   HomeData,
   Me,
   MyVersions,
+  NpcInfo,
   Order,
   Tooltip,
 } from './models';
@@ -60,6 +61,10 @@ export class ApiService {
   }
 
   // ids: item ids, or « s<spell> » for the effect of a recipe that crafts no item (enchants)
+  npcs(ids: (number | string)[]) {
+    return this.get<{ npcs: Record<string, NpcInfo>; missing: string[] }>(`/api/npcs?ids=${ids.join(',')}`);
+  }
+
   items(ids: (number | string)[]) {
     return this.get<{ items: Record<string, Tooltip>; missing: string[] }>(
       `/api/items?ids=${ids.join(',')}`,

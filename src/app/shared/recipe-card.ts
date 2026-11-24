@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, ViewContainerRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService, errorText } from '../core/api.service';
 import { CartService } from '../core/cart.service';
@@ -59,7 +59,18 @@ import { DotComponent, IconComponent, MaterialsComponent, classColor } from './u
         <h4>Composants</h4>
         <app-materials [list]="materials()" [compact]="true" />
 
-        <p class="learn small">📘 {{ data.learnText(r) }}</p>
+        <p class="learn small">
+          📘 {{ data.learnText(r) }}
+          <button
+            type="button"
+            class="btn ghost"
+            style="padding: 0.1rem 0.5rem; margin-left: 0.3rem"
+            title="Où trouver la recette : formateurs, vendeurs, monstres qui lâchent le patron"
+            (click)="openObtain()"
+          >
+            📍 Obtention
+          </button>
+        </p>
 
         <h4>Artisans</h4>
         @if (crafters().length) {
@@ -139,6 +150,7 @@ export class RecipeCardComponent {
   readonly qty = signal(1);
   readonly chosen = signal<string | null>(null);
   readonly busy = signal(false);
+  private vcr = inject(ViewContainerRef);
 
   readonly recipe = computed(() => this.data.recipe(this.spell()));
   readonly itemId = computed(() => this.data.outputItemId(this.spell()));
@@ -175,6 +187,14 @@ export class RecipeCardComponent {
 
   constructor() {
     effect(() => this.data.want([this.tooltipKey(), ...(this.recipe()?.r.map(([id]) => id) ?? [])]));
+  }
+
+  // « 📍 Obtention » window: its code is loaded on the first click only (not in the page's bundle)
+  async openObtain() {
+    const { ObtainDialogComponent } = await import('./obtain-dialog');
+    const ref = this.vcr.createComponent(ObtainDialogComponent);
+    ref.setInput('spell', this.spell());
+    ref.instance.closed.subscribe(() => ref.destroy());
   }
 
   setQty(value: number) {
