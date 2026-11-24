@@ -46,7 +46,7 @@ export const classColor = (cls: string | null | undefined) =>
 })
 export class IconComponent {
   private data = inject(DataService);
-  readonly itemId = input<number | null>(null);
+  readonly itemId = input<number | string | null>(null); // an item, or « s<spell> » (enchant: the spell's icon)
   readonly size = input(40);
   readonly count = input(0);
   readonly title = input('');

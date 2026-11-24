@@ -17,7 +17,7 @@ import { DotComponent, IconComponent, MaterialsComponent, classColor } from './u
     @if (recipe(); as r) {
       <article class="tooltip card">
         <header class="card-head">
-          <app-icon [itemId]="itemId()" [size]="44" />
+          <app-icon [itemId]="tooltipKey()" [size]="44" />
           <div class="card-title">
             <h3 class="q{{ data.quality(spell()) }}">{{ data.recipeName(spell()) }}</h3>
             <p class="muted small">
@@ -52,7 +52,7 @@ import { DotComponent, IconComponent, MaterialsComponent, classColor } from './u
               </div>
             }
           </div>
-        } @else if (itemId()) {
+        } @else if (tooltipKey()) {
           <p class="muted small">Infobulle en chargement…</p>
         }
 
@@ -142,8 +142,9 @@ export class RecipeCardComponent {
 
   readonly recipe = computed(() => this.data.recipe(this.spell()));
   readonly itemId = computed(() => this.data.outputItemId(this.spell()));
+  readonly tooltipKey = computed(() => this.data.tooltipKey(this.spell()));
   readonly lines = computed(() => {
-    const id = this.itemId();
+    const id = this.tooltipKey();
     // the first line repeats the name: it is already the title
     return (id && this.data.tooltips()[id]?.lines.slice(1, 14)) || [];
   });
@@ -173,7 +174,7 @@ export class RecipeCardComponent {
   });
 
   constructor() {
-    effect(() => this.data.want([this.itemId(), ...(this.recipe()?.r.map(([id]) => id) ?? [])]));
+    effect(() => this.data.want([this.tooltipKey(), ...(this.recipe()?.r.map(([id]) => id) ?? [])]));
   }
 
   setQty(value: number) {

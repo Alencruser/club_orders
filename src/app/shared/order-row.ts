@@ -24,7 +24,7 @@ export const STATUS: Record<string, { icon: string; text: string }> = {
     @let o = order();
     <article class="order tooltip" [class.closed]="o.status !== 'pending'">
       <div class="order-main">
-        <app-icon [itemId]="o.item.itemId" [size]="36" [count]="o.qty" />
+        <app-icon [itemId]="o.item.itemId ?? 's' + o.item.spellId" [size]="36" [count]="o.qty" />
         <div class="order-text">
           <div>
             <strong class="q{{ data.quality(o.item.spellId) }}"

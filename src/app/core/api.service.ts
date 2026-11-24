@@ -59,7 +59,8 @@ export class ApiService {
     return (await this.get<{ artisans: Artisan[] }>('/api/artisans')).artisans;
   }
 
-  items(ids: number[]) {
+  // ids: item ids, or « s<spell> » for the effect of a recipe that crafts no item (enchants)
+  items(ids: (number | string)[]) {
     return this.get<{ items: Record<string, Tooltip>; missing: string[] }>(
       `/api/items?ids=${ids.join(',')}`,
     );

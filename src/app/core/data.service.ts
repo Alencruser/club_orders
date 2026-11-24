@@ -66,8 +66,8 @@ export class DataService {
     return map;
   });
 
-  private wanted = new Set<number>();
-  private tries = new Map<number, number>();
+  private wanted = new Set<string>();
+  private tries = new Map<string, number>();
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   async load() {
@@ -96,6 +96,14 @@ export class DataService {
 
   outputItemId(spell: string | number) {
     return this.recipe(spell)?.o?.[0] ?? null;
+  }
+
+  // Tooltip (and icon) of a recipe: its crafted item, or « s<spell> » for a recipe that crafts nothing
+  // (enchants: the bot gives the spell's effect, « +2 Endurance »…)
+  tooltipKey(spell: string | number): string | null {
+    if (!this.recipe(spell)) return null;
+    const id = this.outputItemId(spell);
+    return id ? String(id) : `s${spell}`;
   }
 
   itemName(itemId: number) {
@@ -151,10 +159,13 @@ export class DataService {
   }
 
   // Ask the tooltips of these items; cached ones come at once, missing ones are asked again later.
-  want(ids: (number | null | undefined)[]) {
+  want(ids: (number | string | null | undefined)[]) {
     // untracked: a component asking from an effect must not re-run each time a tooltip arrives
     const have = untracked(this.tooltips);
-    for (const id of ids) if (id && !have[id] && (this.tries.get(id) ?? 0) < 4) this.wanted.add(id);
+    for (const raw of ids) {
+      const id = raw ? String(raw) : '';
+      if (id && !have[id] && (this.tries.get(id) ?? 0) < 4) this.wanted.add(id);
+    }
     if (this.wanted.size && !this.timer) this.timer = setTimeout(() => this.fetchTooltips(), 60);
   }
 
@@ -177,7 +188,7 @@ export class DataService {
       }
       for (const id of ids) if (!items[id]) this.tries.set(id, (this.tries.get(id) ?? 0) + 1);
       // the bot fetches the missing ones from Wowhead in the background: ask again a bit later
-      if (missing.length) setTimeout(() => this.want(missing.map(Number)), 4000);
+      if (missing.length) setTimeout(() => this.want(missing), 4000);
     } catch {
       for (const id of ids) this.tries.set(id, (this.tries.get(id) ?? 0) + 1);
     }

@@ -27,7 +27,7 @@ import { IconComponent, MaterialsComponent, classColor } from '../shared/ui';
         <section>
           @for (line of cart.lines(); track line.spell + line.artisan; let i = $index) {
             <article class="tooltip cart-line">
-              <app-icon [itemId]="data.outputItemId(line.spell)" [size]="36" />
+              <app-icon [itemId]="data.tooltipKey(line.spell)" [size]="36" />
               <div class="grow">
                 <strong class="q{{ data.quality(line.spell) }}">{{
                   data.recipeName(line.spell)
