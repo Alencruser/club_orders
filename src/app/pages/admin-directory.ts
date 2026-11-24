@@ -272,8 +272,11 @@ import { ToastService } from '../core/toast.service';
         </section>
 
         <section class="tooltip admin-card">
-          <h2>🪦 Persos supprimés ({{ d.forgotten.length }})</h2>
-          <p class="muted small">Supprimés en jeu : l'addon les renvoie, le bot les ignore. Rétablir pour les accepter à nouveau.</p>
+          <h2>🪦 Corbeille ({{ d.forgotten.length }})</h2>
+          <p class="muted small">
+            Persos supprimés, gardés avec leurs données : l'addon les renvoie, le bot les ignore. Leurs dépôts et suivis
+            passés comptent toujours pour leur joueur. Rétablir les remet exactement à leur place.
+          </p>
           <ul class="admin-list">
             @for (f of d.forgotten; track f.key) {
               <li class="admin-dir-hit">
