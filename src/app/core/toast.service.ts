@@ -4,7 +4,10 @@ export interface Toast {
   id: number;
   text: string;
   kind: 'ok' | 'error' | 'warn';
+  undo?: () => void; // « ↩ Annuler » button, shown while the toast lasts
 }
+
+const UNDO_MS = 10 * 1000;
 
 @Injectable({ providedIn: 'root' })
 export class ToastService {
@@ -25,13 +28,18 @@ export class ToastService {
     this.push(text, 'warn');
   }
 
+  // Done, with a way back for UNDO_MS: « ↩ Annuler » calls undo (once) and closes the toast
+  done(text: string, undo: () => void) {
+    this.push(text, 'ok', undo);
+  }
+
   dismiss(id: number) {
     this.toasts.update((list) => list.filter((t) => t.id !== id));
   }
 
-  private push(text: string, kind: Toast['kind']) {
+  private push(text: string, kind: Toast['kind'], undo?: () => void) {
     const id = this.next++;
-    this.toasts.update((list) => [...list.slice(-3), { id, text, kind }]);
-    setTimeout(() => this.dismiss(id), kind === 'ok' ? 4000 : kind === 'warn' ? 9000 : 7000);
+    this.toasts.update((list) => [...list.slice(-3), { id, text, kind, ...(undo ? { undo } : {}) }]);
+    setTimeout(() => this.dismiss(id), undo ? UNDO_MS : kind === 'ok' ? 4000 : kind === 'warn' ? 9000 : 7000);
   }
 }

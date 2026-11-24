@@ -171,7 +171,12 @@ const LOGIN_ERRORS: Record<string, string> = {
 
     <div class="toasts" aria-live="polite">
       @for (t of toast.toasts(); track t.id) {
-        @if (t.kind !== 'warn') {
+        @if (t.undo) {
+          <div class="toast {{ t.kind }} toast-undoable">
+            <span>{{ t.text }}</span>
+            <button type="button" class="btn ghost" (click)="toast.dismiss(t.id); t.undo()">↩ Annuler</button>
+          </div>
+        } @else if (t.kind !== 'warn') {
           <button type="button" class="toast {{ t.kind }}" (click)="toast.dismiss(t.id)">
             {{ t.text }}
           </button>

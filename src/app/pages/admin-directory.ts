@@ -437,7 +437,11 @@ export class AdminDirectoryComponent {
     if (!picked.length) return;
     const names = picked.map((c) => c.name);
     if (!confirm(`Mettre ${names.length} perso(s) à la corbeille ?\n\n${names.join(', ')}\n\nRétablissables depuis 🪦 Corbeille.`)) return;
-    const ok = await this.run(() => this.api.adminDirectoryAction('forget-many', { names }), `🪦 ${names.length} perso(s) à la corbeille.`);
+    const ok = await this.run(() => this.api.adminDirectoryAction('forget-many', { names }), `🪦 ${names.length} perso(s) à la corbeille.`, async () => {
+      for (const name of names) await this.api.adminDirectoryAction('restore', { key: name.toLowerCase() }).catch(() => {});
+      await this.load();
+      this.toast.ok(`↩ ${names.length} perso(s) rétabli(s).`);
+    });
     if (ok) this.idlePicked.set(new Set());
   }
 
@@ -514,30 +518,35 @@ export class AdminDirectoryComponent {
     await this.run(() => this.api.adminDirectoryAction('remove', { userId: p.userId, cascade: this.cascade }), `🗑️ ${p.name} supprimé.`);
   }
 
+  // à la corbeille, sans confirmation : « ↩ Annuler » pendant 10 s, puis 🪦 Corbeille → Rétablir
   async forget(c: { name: string; realm: string }) {
-    // à la corbeille : rétablissable depuis 🪦 Corbeille
-    if (!confirm(`${c.name} a été supprimé en jeu ?\n\nIl disparaît de l'annuaire et des métiers, et l'addon ne le fera plus revenir. Rétablissable.`)) return;
-    await this.run(() => this.api.adminDirectoryAction('forget', { name: c.name, realm: c.realm }), `🪦 ${c.name} supprimé pour de bon.`);
+    await this.run(() => this.api.adminDirectoryAction('forget', { name: c.name, realm: c.realm }), `🪦 ${c.name} à la corbeille.`, () =>
+      this.restore(c.name.toLowerCase(), c.name),
+    );
   }
 
   async restore(key: string, name: string) {
     await this.run(() => this.api.adminDirectoryAction('restore', { key }), `↩ ${name} rétabli.`);
   }
 
+  // délier, sans confirmation : « ↩ Annuler » le relie de nouveau à son joueur
   async link(key: string, userId: string | null) {
-    if (!userId && !confirm(`Délier ${key} ? Ses dépôts et son suivi ne compteront plus pour ce joueur.`)) return;
+    const before = this.dir()?.players.find((p) => p.links.includes(key))?.userId ?? null;
     const done = userId ? `🧭 ${key} relié à ${this.memberName(userId)}.` : `✂️ ${key} délié.`;
-    await this.run(() => this.api.adminDirectoryAction('link', { key, userId }), done);
+    const undo = !userId && before ? () => this.link(key, before) : undefined;
+    await this.run(() => this.api.adminDirectoryAction('link', { key, userId }), done, undo);
     delete this.linkTo[key];
   }
 
   // true when the bot accepted the change
-  private async run(call: () => Promise<{ directory: AdminDirectory }>, done: string) {
+  // undo : « ↩ Annuler » dans le message pendant 10 s
+  private async run(call: () => Promise<{ directory: AdminDirectory }>, done: string, undo?: () => unknown) {
     this.busy.set(true);
     try {
       const { directory } = await call();
       this.dir.set(directory);
-      this.toast.ok(done);
+      if (undo) this.toast.done(done, () => void undo());
+      else this.toast.ok(done);
       return true;
     } catch (err) {
       this.toast.error(`❌ ${errorText(err)}`);

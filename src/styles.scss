@@ -790,6 +790,15 @@ input[type='checkbox'] {
       0 0 0 1px #ffb347,
       0 6px 18px rgba(0, 0, 0, 0.6);
   }
+  &.toast-undoable {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: default;
+    span {
+      flex: 1;
+    }
+  }
 }
 
 // --- Suggestion / bug window, and the /feedback page ---

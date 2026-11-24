@@ -188,8 +188,12 @@ export class AdminFollowComponent {
   }
 
 
+  // ignorer / recompter : « ↩ Annuler » pendant 10 s
   toggle(s: AdminFollowSession) {
-    return this.run(() => this.api.adminFollowIgnore(s.id, !s.ignored), s.ignored ? '↩️ Session recomptée.' : '🚫 Session ignorée.');
+    const ignored = !s.ignored;
+    return this.run(() => this.api.adminFollowIgnore(s.id, ignored), ignored ? '🚫 Session ignorée.' : '↩️ Session recomptée.', () =>
+      this.run(() => this.api.adminFollowIgnore(s.id, !ignored), ignored ? '↩️ Session recomptée.' : '🚫 Session ignorée.'),
+    );
   }
 
 
@@ -198,11 +202,12 @@ export class AdminFollowComponent {
     return this.run(() => this.api.adminFollowRemove(s.id), '🗑️ Session supprimée.');
   }
 
-  private async run(call: () => Promise<AdminFollow>, done: string) {
+  private async run(call: () => Promise<AdminFollow>, done: string, undo?: () => unknown) {
     this.busy.set(true);
     try {
       this.data.set(await call());
-      this.toast.ok(done);
+      if (undo) this.toast.done(done, () => void undo());
+      else this.toast.ok(done);
     } catch (err) {
       this.toast.error(`❌ ${errorText(err)}`);
     } finally {
