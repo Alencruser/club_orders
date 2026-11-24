@@ -93,7 +93,7 @@ type Show = 'all' | 'long' | 'ignored' | 'running';
         </div>
         <ul class="fl-list">
           @for (s of shown(); track s.id) {
-            <li [class.fl-off]="s.ignored">
+            <li [class.fl-off]="s.ignored || s.trashed">
               <span class="small">{{ s.start * 1000 | date: 'dd/MM HH:mm' }}</span>
               <span class="fl-who">
                 <b>{{ s.member ?? s.name }}</b>
@@ -103,6 +103,9 @@ type Show = 'all' | 'long' | 'ignored' | 'running';
                 → {{ s.targetMember ?? s.target }}
                 @if (!s.done) {
                   <span class="fl-badge">en cours</span>
+                }
+                @if (s.trashed) {
+                  <span class="fl-badge" title="Le perso est à la corbeille : la session ne compte plus, elle recompte s'il est rétabli">🪦 corbeille</span>
                 }
                 @if (s.ignored) {
                   <span class="fl-badge" [title]="'par ' + (s.ignored.by ?? '?')">ignorée</span>

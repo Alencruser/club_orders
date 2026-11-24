@@ -220,6 +220,7 @@ export interface AdminFollowSession {
   seconds: number;
   done: boolean;
   ignored: { at: number; by: string | null } | null;
+  trashed?: boolean; // the follower is in the corbeille: masked, counted again if restored
 }
 export interface AdminFollow {
   sessions: AdminFollowSession[];
