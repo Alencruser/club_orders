@@ -697,7 +697,13 @@ export interface AdminTools {
   perPageChoices: number[];
   recipes: { build: string; importedAt: number | null; recipes: number; items: number } | null;
   recipesSeen?: number; // recipes seen in the players' professions (recipes.json)
-  wowhead: { cached: number; total: number; warming: boolean } | null;
+  wowhead: {
+    cached: number;
+    total: number;
+    warming: boolean;
+    // by kind: crafted items, enchants, patterns (sources), NPCs
+    parts?: Record<'items' | 'spells' | 'patterns' | 'npcs', { cached: number; total: number }>;
+  } | null;
   importing: boolean;
   releases: {
     channelId: string | null;

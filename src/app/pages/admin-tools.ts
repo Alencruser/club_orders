@@ -49,8 +49,15 @@ import { ToastService } from '../core/toast.service';
           </p>
           <p>
             @if (t.wowhead; as w) {
-              Cache Wowhead : {{ w.cached }}/{{ w.total }} objets
+              Cache Wowhead : {{ w.cached }}/{{ w.total }} infos
               {{ w.warming ? '· ⏳ remplissage en cours' : w.cached >= w.total ? '· ✅ complet' : '' }}
+              @if (w.parts; as p) {
+                <br />
+                <span class="muted">
+                  objets {{ p.items.cached }}/{{ p.items.total }} · enchantements {{ p.spells.cached }}/{{ p.spells.total }} ·
+                  patrons {{ p.patterns.cached }}/{{ p.patterns.total }} · PNJ {{ p.npcs.cached }}/{{ p.npcs.total }}
+                </span>
+              }
             }
           </p>
           <div class="admin-actions">
@@ -272,7 +279,7 @@ export class AdminToolsComponent {
   wowhead() {
     return this.run(async () => {
       const r = await this.api.adminTool<{ left: number }>('wowhead');
-      return `▶️ Cache Wowhead relancé (${r.left} objet(s) à récupérer).`;
+      return `▶️ Cache Wowhead relancé (${r.left} info(s) à récupérer).`;
     });
   }
 
