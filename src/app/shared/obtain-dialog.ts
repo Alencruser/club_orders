@@ -2,13 +2,24 @@ import { Component, computed, effect, HostListener, inject, input, OnDestroy, ou
 import { ApiService } from '../core/api.service';
 import { DataService, money } from '../core/data.service';
 import { NpcInfo, PatternSources } from '../core/models';
+import { readStore, writeStore } from '../core/storage';
 
 const WOWHEAD = 'https://www.wowhead.com/forever/fr';
 const SHOWN = 5; // trainers or vendors listed before « voir les autres »
 
-// NPCs and pattern sources already received, kept while the page is open: reopening a window is instant
-const known = new Map<string, NpcInfo>();
-const knownPatterns = new Map<string, PatternSources>();
+// NPCs and pattern sources already received, kept in this browser: reopening a window is instant, even
+// after a reload. Only complete answers (Wowhead's part there); the oldest go past the cap.
+const NPC_STORE = 'co.npcs';
+const PATTERN_STORE = 'co.patterns';
+const NPC_MAX = 3000;
+const PATTERN_MAX = 800;
+const known = new Map<string, NpcInfo>(Object.entries(readStore<Record<string, NpcInfo>>(NPC_STORE, {})));
+const knownPatterns = new Map<string, PatternSources>(Object.entries(readStore<Record<string, PatternSources>>(PATTERN_STORE, {})));
+
+function persist<T>(key: string, map: Map<string, T>, max: number) {
+  while (map.size > max) map.delete(map.keys().next().value as string);
+  writeStore(key, Object.fromEntries(map));
+}
 // kinds of source Wowhead gives without naming anyone
 const KINDS: Record<number, string> = { 2: 'butin', 4: 'récompense de quête', 5: 'vendu par un marchand', 7: 'découverte', 16: 'pêche', 21: 'butin' };
 const RANKS: Record<number, string> = { 4: 'Neutre', 5: 'Amical', 6: 'Honoré', 7: 'Révéré', 8: 'Exalté' };
@@ -118,6 +129,41 @@ interface Mob {
         background: rgba(200, 50, 40, 0.45);
       }
     }
+    .ob-loading {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin: 0.5rem 0;
+      padding: 0.5rem 0.7rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .ob-spin {
+      flex: none;
+      display: inline-block;
+      width: 1.3rem;
+      height: 1.3rem;
+      border: 3px solid rgba(248, 215, 124, 0.25);
+      border-top-color: #f8d77c;
+      border-radius: 50%;
+      animation: ob-spin 0.8s linear infinite;
+      &.small {
+        width: 0.8rem;
+        height: 0.8rem;
+        border-width: 2px;
+        vertical-align: -0.1rem;
+      }
+    }
+    @keyframes ob-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ob-spin {
+        animation-duration: 2.4s;
+      }
+    }
     .ob-credit {
       margin-top: 0.6rem;
       opacity: 0.65;
@@ -131,6 +177,16 @@ interface Mob {
           <h2>📍 Obtention · {{ data.recipeName(spell()) }}</h2>
           <button type="button" class="btn ghost" (click)="closed.emit()" aria-label="Fermer">✕</button>
         </div>
+
+        @if (loading() || patternLoading()) {
+          <div class="ob-loading" role="status" aria-live="polite">
+            <span class="ob-spin" aria-hidden="true"></span>
+            <span class="small">
+              Chargement des infos depuis Wowhead…
+              <span class="muted">La première fois, ça prend quelques secondes ; ensuite c’est instantané.</span>
+            </span>
+          </div>
+        }
 
         @if (recipe(); as r) {
           @if (r.scroll; as sc) {
@@ -163,7 +219,16 @@ interface Mob {
                   @if (v.side === 'A' || v.side === 'H') {
                     <span class="ob-side {{ v.side }}">{{ v.side === 'A' ? 'Alliance' : 'Horde' }}</span>
                   }
-                  <a [href]="wowhead + '/npc=' + v.id" target="_blank" rel="noopener">{{ v.npc?.name ?? v.name ?? '…' }} ↗</a>
+                  <a [href]="wowhead + '/npc=' + v.id" target="_blank" rel="noopener">
+                    @if (v.npc?.name ?? v.name; as n) {
+                      {{ n }}
+                    } @else if (v.npc) {
+                      PNJ n°{{ v.id }}
+                    } @else {
+                      <span class="ob-spin small" aria-label="chargement"></span>
+                    }
+                    ↗</a
+                  >
                   · {{ vendorPlace(v) }}
                   @if (v.price) {
                     · {{ money(v.price) }}
@@ -190,7 +255,15 @@ interface Mob {
               }
               @for (t of shownTrainers(); track t.id) {
                 <li>
-                  🎓 <a [href]="wowhead + '/npc=' + t.id" target="_blank" rel="noopener">{{ t.npc?.name ?? '…' }} ↗</a>
+                  🎓
+                  <a [href]="wowhead + '/npc=' + t.id" target="_blank" rel="noopener">
+                    @if (t.npc) {
+                      {{ t.npc.name ?? 'PNJ n°' + t.id }}
+                    } @else {
+                      <span class="ob-spin small" aria-label="chargement"></span>
+                    }
+                    ↗</a
+                  >
                   · {{ place(t.npc) }}
                 </li>
               }
@@ -217,7 +290,14 @@ interface Mob {
                   <tr>
                     <td>
                       <a [href]="m.id ? wowhead + '/npc=' + m.id : search(m.name ?? '')" target="_blank" rel="noopener">
-                        {{ m.npc?.name ?? m.name ?? '…' }} ↗
+                        @if (m.npc?.name ?? m.name; as n) {
+                          {{ n }}
+                        } @else if (m.npc) {
+                          Monstre n°{{ m.id }}
+                        } @else {
+                          <span class="ob-spin small" aria-label="chargement"></span>
+                        }
+                        ↗
                       </a>
                       @if (m.npc && kindText(m.npc); as k) {
                         <span class="ob-kind" [class.ob-elite]="m.npc.kind"> ({{ k }})</span>
@@ -258,9 +338,6 @@ interface Mob {
             </p>
           }
 
-          @if (loading() || patternLoading()) {
-            <p class="muted small">Chargement depuis Wowhead…</p>
-          }
 
           <p class="ob-credit">
             Sources : SkillUp Forever, Wowhead et
@@ -427,6 +504,14 @@ export class ObtainDialogComponent implements OnDestroy {
   });
 
   constructor() {
+    // recipes imported again (new ForeverDB data): the sources kept in this browser are dropped
+    const at = this.data.catalog()?.importedAt;
+    if (at && readStore<number>(PATTERN_STORE + '.at', 0) !== at) {
+      knownPatterns.clear();
+      this.patterns.set({});
+      writeStore(PATTERN_STORE, {});
+      writeStore(PATTERN_STORE + '.at', at);
+    }
     effect(() => {
       const id = this.scrollId();
       const have = id ? knownPatterns.get(String(id)) : null;
@@ -460,6 +545,7 @@ export class ObtainDialogComponent implements OnDestroy {
       const res = await this.api.npcs(ids);
       for (const [id, n] of Object.entries(res.npcs)) known.set(id, n);
       this.npcs.set(Object.fromEntries(known));
+      if (Object.keys(res.npcs).length) persist(NPC_STORE, known, NPC_MAX);
       missing = res.missing;
     } catch {
       missing = ids;
@@ -480,6 +566,7 @@ export class ObtainDialogComponent implements OnDestroy {
       if (res.patterns[id]) {
         knownPatterns.set(id, res.patterns[id]);
         this.patterns.set(Object.fromEntries(knownPatterns));
+        if (res.patterns[id].more) persist(PATTERN_STORE, knownPatterns, PATTERN_MAX);
       }
       missing = res.missing.includes(id);
     } catch {
@@ -492,6 +579,7 @@ export class ObtainDialogComponent implements OnDestroy {
 
   place(n: NpcInfo | null, zone: string | null = null) {
     if (!n) return zone ?? '…';
+    if (n.unknown) return zone ?? 'zone inconnue';
     if (!n.zone) return zone ?? 'zone inconnue';
     return n.coords ? `${n.zone} · ${n.coords[0]}, ${n.coords[1]}` : n.zone;
   }

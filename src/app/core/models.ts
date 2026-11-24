@@ -86,7 +86,8 @@ export interface Artisan {
 // Wowhead tooltip, cached by the bot.
 // A trainer, vendor or monster, from its Wowhead page (« 📍 Obtention »)
 export interface NpcInfo {
-  name: string;
+  name: string | null; // null: unknown to Wowhead (unknown true)
+  unknown?: boolean;
   zone: string | null;
   coords: [number, number] | null;
   level: string | null; // "37", "8 - 12", "??"
