@@ -10,6 +10,7 @@ import {
   AdminSpy,
   AdminTiers,
   AdminFollow,
+  AdminLogEntry,
   AdminSettings,
   AdminSettingsValues,
   AdminDataset,
@@ -194,6 +195,11 @@ export class ApiService {
   }
   adminSpyAction(bot: string, action: 'start' | 'stop' | 'report' | 'post', channelId: string | null, kind?: string) {
     return this.post<{ result: unknown; spy: AdminSpy }>('/api/admin/spy/action', { bot, action, channelId, kind });
+  }
+
+  // 📜 Journal des actions (État tab), most recent first
+  async adminLog() {
+    return (await this.get<{ entries: AdminLogEntry[] }>('/api/admin/log')).entries;
   }
 
   // ⚙️ Réglages (and the shared block of 🕵️ Espionnage)

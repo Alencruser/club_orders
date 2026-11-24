@@ -21,6 +21,7 @@ import { AdminSpyComponent } from './admin-spy';
 import { AdminTiersComponent } from './admin-tiers';
 import { AdminFollowComponent } from './admin-follow';
 import { AdminSettingsComponent } from './admin-settings';
+import { AdminLogComponent } from './admin-log';
 
 type Tab = 'status' | 'channels' | 'anomalies' | 'versions' | 'bank' | 'directory' | 'spy' | 'follow' | 'tiers' | 'settings' | 'data' | 'tools';
 const TABS: Tab[] = ['status', 'channels', 'anomalies', 'versions', 'bank', 'directory', 'spy', 'follow', 'tiers', 'settings', 'data', 'tools'];
@@ -32,7 +33,7 @@ const AUTO_REFRESH_MS = 60 * 1000;
 // sent back home. Step 1: status, channels, anomalies (data and tools come next).
 @Component({
   selector: 'app-admin',
-  imports: [DatePipe, FormsModule, AdminDataComponent, AdminToolsComponent, AdminBankComponent, AdminDirectoryComponent, AdminSpyComponent, AdminFollowComponent, AdminTiersComponent, AdminSettingsComponent],
+  imports: [DatePipe, FormsModule, AdminDataComponent, AdminToolsComponent, AdminBankComponent, AdminDirectoryComponent, AdminSpyComponent, AdminFollowComponent, AdminTiersComponent, AdminSettingsComponent, AdminLogComponent],
   template: `
     @if (state(); as s) {
       <div class="page-head">
@@ -217,6 +218,7 @@ const AUTO_REFRESH_MS = 60 * 1000;
               }
             </ul>
           </section>
+          <app-admin-log />
         </div>
       }
 
