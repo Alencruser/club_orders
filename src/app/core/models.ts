@@ -96,8 +96,20 @@ export interface NpcInfo {
 // Sources of a pattern from Wowhead: quests that give it, NPCs that sell or drop it, and the kinds of
 // source (5 vendor, 4 quest, 2 drop…) even when Wowhead names nobody
 export interface PatternSources {
-  more: ({ quest: number; name: string; zone: string | null } | { npc: number; name: string; zone: string | null; kind: 'vendor' | 'drop' })[];
-  source: number[];
+  // Wowhead (null: not fetched yet)
+  more: ({ quest: number; name: string; zone: string | null } | { npc: number; name: string; zone: string | null; kind: 'vendor' | 'drop' })[] | null;
+  source: number[] | null;
+  // ForeverDB.net (English names): vendors [npc, copper, limited], vendor count, drop [monster, %, sources,
+  // Classic data], quests [[name, Classic data]], reputation [faction, rank], drops seen [times, players]
+  fdb: {
+    v?: [number, number, number][];
+    vc?: number;
+    d?: [string, number | null, number, boolean];
+    q?: [string, boolean][];
+    r?: [string, number];
+    s?: [number, number];
+  } | null;
+  fdbNpcs: Record<string, [string, number | null, number | null, string | null, boolean] | null>; // name, x, y, side A/H, seen in Forever
 }
 
 export interface Tooltip {

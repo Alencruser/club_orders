@@ -4,22 +4,49 @@ import { DataService, money } from '../core/data.service';
 import { NpcInfo, PatternSources } from '../core/models';
 
 const WOWHEAD = 'https://www.wowhead.com/forever/fr';
-const TRAINERS_SHOWN = 5;
+const SHOWN = 5; // trainers or vendors listed before « voir les autres »
 
 // NPCs and pattern sources already received, kept while the page is open: reopening a window is instant
 const known = new Map<string, NpcInfo>();
 const knownPatterns = new Map<string, PatternSources>();
 // kinds of source Wowhead gives without naming anyone
 const KINDS: Record<number, string> = { 2: 'butin', 4: 'récompense de quête', 5: 'vendu par un marchand', 7: 'découverte', 16: 'pêche', 21: 'butin' };
+const RANKS: Record<number, string> = { 4: 'Neutre', 5: 'Amical', 6: 'Honoré', 7: 'Révéré', 8: 'Exalté' };
 
-// « 📍 Obtention » of a recipe (recipe card): the pattern, the trainers and vendors (zone, position),
-// and the monsters that drop the pattern, best drop rate first (name, type and level, zone, rate). Every
-// name links to Wowhead Forever. Loaded only when opened (@defer in the recipe card).
+type WhQuest = { quest: number; name: string; zone: string | null };
+type WhNpc = { npc: number; name: string; zone: string | null; kind: 'vendor' | 'drop' };
+
+interface Vendor {
+  id: string;
+  name: string | null; // when Wowhead's NPC page isn't there (yet)
+  zone: string | null;
+  coords: [number, number] | null;
+  side: string | null; // A / H
+  price: number | null;
+  stock: number | null; // limited stock (SkillUp)
+  limited: boolean; // limited stock (ForeverDB)
+  unseen: boolean; // ForeverDB: Classic data, not seen in Forever yet
+  npc: NpcInfo | null;
+}
+
+interface Mob {
+  id: string | null; // null: named by ForeverDB only (English name, no id)
+  name: string | null;
+  rate: number | null;
+  zone: string | null;
+  npc: NpcInfo | null;
+}
+
+// « 📍 Obtention » of a recipe (recipe card): the pattern, the trainers, vendors and quests (zone, position,
+// faction), and the monsters that drop the pattern, best drop rate first (name, type and level, zone, rate).
+// Three sources put together: SkillUp Forever (trainers, drop rates, limited stock), Wowhead (French names,
+// zones, positions) and ForeverDB.net (every vendor, faction, quests, reputation; credited at the bottom, as
+// its licence asks). Loaded on the first click (recipe card).
 @Component({
   selector: 'app-obtain-dialog',
   styles: `
     .ob {
-      width: min(640px, 100%);
+      width: min(660px, 100%);
       max-height: calc(100vh - 2rem);
       overflow-y: auto;
     }
@@ -79,6 +106,23 @@ const KINDS: Record<number, string> = { 2: 'butin', 4: 'récompense de quête', 
     .ob-elite {
       color: #f8b84e;
     }
+    .ob-side {
+      font-size: 0.75rem;
+      padding: 0 0.3rem;
+      border-radius: 4px;
+      margin-right: 0.2rem;
+      &.A {
+        background: rgba(60, 110, 220, 0.45);
+      }
+      &.H {
+        background: rgba(200, 50, 40, 0.45);
+      }
+    }
+    .ob-credit {
+      margin-top: 0.6rem;
+      opacity: 0.65;
+      font-size: 0.8rem;
+    }
   `,
   template: `
     <div class="overlay" (click)="closed.emit()">
@@ -98,26 +142,51 @@ const KINDS: Record<number, string> = { 2: 'butin', 4: 'récompense de quête', 
           } @else if (r.fee; as fee) {
             <p>🎓 Appris chez un formateur · métier {{ fee[1] }} · {{ money(fee[0]) }}</p>
           }
+          @if (fdb()?.r; as rep) {
+            <p class="small">🏅 Réputation requise : {{ rep[0] }} · {{ rank(rep[1]) }}</p>
+          }
 
           @if (trainers().length || vendors().length || quests().length) {
             <h3>🧑 PNJ et quêtes</h3>
             <ul>
-              @for (q of quests(); track q.quest) {
+              @for (q of quests(); track q.name) {
                 <li>
-                  ❗ Quête <a [href]="wowhead + '/quest=' + q.quest" target="_blank" rel="noopener">« {{ q.name }} » ↗</a>
+                  ❗ Quête <a [href]="q.href" target="_blank" rel="noopener">« {{ q.name }} » ↗</a>
                   @if (q.zone) {
                     · {{ q.zone }}
                   }
                 </li>
               }
-              @for (v of vendors(); track v.id) {
+              @for (v of shownVendors(); track v.id) {
                 <li>
-                  🛒 <a [href]="wowhead + '/npc=' + v.id" target="_blank" rel="noopener">{{ v.npc?.name ?? '…' }} ↗</a>
-                  · {{ place(v.npc, v.zone) }}
+                  🛒
+                  @if (v.side === 'A' || v.side === 'H') {
+                    <span class="ob-side {{ v.side }}">{{ v.side === 'A' ? 'Alliance' : 'Horde' }}</span>
+                  }
+                  <a [href]="wowhead + '/npc=' + v.id" target="_blank" rel="noopener">{{ v.npc?.name ?? v.name ?? '…' }} ↗</a>
+                  · {{ vendorPlace(v) }}
+                  @if (v.price) {
+                    · {{ money(v.price) }}
+                  }
                   @if (v.stock) {
                     · stock limité ({{ v.stock }})
+                  } @else if (v.limited) {
+                    · stock limité
+                  }
+                  @if (v.unseen) {
+                    <span class="muted small" title="Donnée de WoW Classic, pas encore vue dans Forever"> · à confirmer</span>
                   }
                 </li>
+              }
+              @if (vendors().length > shownVendors().length) {
+                <li>
+                  <button type="button" class="btn ghost" (click)="allVendors.set(true)">
+                    Voir les {{ vendors().length - shownVendors().length }} autres vendeurs
+                  </button>
+                </li>
+              }
+              @if (moreVendors() > 0) {
+                <li class="muted small">… et {{ moreVendors() }} autre(s) vendeur(s) non détaillé(s)</li>
               }
               @for (t of shownTrainers(); track t.id) {
                 <li>
@@ -144,20 +213,25 @@ const KINDS: Record<number, string> = { 2: 'butin', 4: 'récompense de quête', 
                 </tr>
               </thead>
               <tbody>
-                @for (m of mobs(); track m.id) {
+                @for (m of mobs(); track $index) {
                   <tr>
                     <td>
-                      <a [href]="wowhead + '/npc=' + m.id" target="_blank" rel="noopener">{{ m.npc?.name ?? '…' }} ↗</a>
+                      <a [href]="m.id ? wowhead + '/npc=' + m.id : search(m.name ?? '')" target="_blank" rel="noopener">
+                        {{ m.npc?.name ?? m.name ?? '…' }} ↗
+                      </a>
                       @if (m.npc && kindText(m.npc); as k) {
                         <span class="ob-kind" [class.ob-elite]="m.npc.kind"> ({{ k }})</span>
                       }
                     </td>
-                    <td>{{ m.npc ? (m.npc.zone ?? m.zone ?? '—') : (m.zone ?? '…') }}</td>
+                    <td>{{ m.npc ? (m.npc.zone ?? m.zone ?? '—') : (m.zone ?? (m.id ? '…' : '—')) }}</td>
                     <td class="rate">{{ m.rate === null ? '—' : rate(m.rate) }}</td>
                   </tr>
                 }
               </tbody>
             </table>
+            @if (dropNote(); as note) {
+              <p class="muted small">{{ note }}</p>
+            }
           }
 
           @if (worldDrop()) {
@@ -166,7 +240,8 @@ const KINDS: Record<number, string> = { 2: 'butin', 4: 'récompense de quête', 
 
           @if (otherKinds().length && r.scroll) {
             <p class="small">
-              🔎 {{ mobs().length || vendors().length || quests().length || trainers().length || worldDrop() ? 'Aussi' : 'Source' }} : {{ otherKinds().join(', ') }}, sans plus de détail ;
+              🔎 {{ mobs().length || vendors().length || quests().length || trainers().length || worldDrop() ? 'Aussi' : 'Source' }} :
+              {{ otherKinds().join(', ') }}, sans plus de détail ;
               <a [href]="wowhead + '/item=' + r.scroll[0]" target="_blank" rel="noopener">voir la fiche du patron ↗</a>
             </p>
           }
@@ -174,7 +249,7 @@ const KINDS: Record<number, string> = { 2: 'butin', 4: 'récompense de quête', 
           @if (nothing()) {
             <p class="muted">
               @if (r.scroll) {
-                Ni le jeu ni Wowhead ne disent où trouver ce patron :
+                Personne ne sait encore où trouver ce patron :
                 <a [href]="wowhead + '/item=' + r.scroll[0]" target="_blank" rel="noopener">voir sa fiche Wowhead ↗</a>
               } @else {
                 Source inconnue :
@@ -186,6 +261,11 @@ const KINDS: Record<number, string> = { 2: 'butin', 4: 'récompense de quête', 
           @if (loading() || patternLoading()) {
             <p class="muted small">Chargement depuis Wowhead…</p>
           }
+
+          <p class="ob-credit">
+            Sources : SkillUp Forever, Wowhead et
+            <a href="https://foreverdb.net" target="_blank" rel="noopener">Data from ForeverDB.net</a>
+          </p>
         }
       </section>
     </div>
@@ -201,82 +281,118 @@ export class ObtainDialogComponent implements OnDestroy {
   readonly closed = output<void>();
 
   readonly allTrainers = signal(false);
+  readonly allVendors = signal(false);
   private readonly npcs = signal<Record<string, NpcInfo>>(Object.fromEntries(known));
   private readonly pending = signal(0);
   private readonly patterns = signal<Record<string, PatternSources>>(Object.fromEntries(knownPatterns));
   readonly patternLoading = signal(false);
-  private timer: ReturnType<typeof setTimeout> | null = null;
   private alive = true;
 
   readonly recipe = computed(() => this.data.recipe(this.spell()));
   private readonly scrollId = computed(() => this.recipe()?.scroll?.[0] ?? null);
 
-  // Wowhead's details for the pattern (null: not received yet, or no pattern)
+  // everything known about the pattern (null: not received yet, or no pattern)
   private readonly sources = computed(() => {
     const id = this.scrollId();
     return id ? ((this.patterns()[id] as PatternSources | undefined) ?? null) : null;
   });
-  private readonly whNpcs = computed(() =>
-    (this.sources()?.more ?? []).filter((m): m is Extract<PatternSources['more'][number], { npc: number }> => 'npc' in m),
-  );
-  readonly quests = computed(() =>
-    (this.sources()?.more ?? []).filter((m): m is Extract<PatternSources['more'][number], { quest: number }> => 'quest' in m),
-  );
+  readonly fdb = computed(() => this.sources()?.fdb ?? null);
+  private readonly whNpcs = computed(() => (this.sources()?.more ?? []).filter((m): m is WhNpc => 'npc' in m));
+  private readonly whQuests = computed(() => (this.sources()?.more ?? []).filter((m): m is WhQuest => 'quest' in m));
 
-  // SkillUp's drop rates first (best first), then the monsters only Wowhead names (rate unknown)
+  // Wowhead's quests (French), else ForeverDB's (English, found with Wowhead's search)
+  readonly quests = computed(() => {
+    const wh = this.whQuests();
+    if (wh.length) return wh.map((q) => ({ name: q.name, zone: q.zone, href: `${WOWHEAD}/quest=${q.quest}` }));
+    return (this.fdb()?.q ?? []).map(([name]) => ({ name, zone: null as string | null, href: this.search(name) }));
+  });
+
+  // SkillUp's drop rates first (best first), then the monsters only Wowhead names (rate unknown); if neither
+  // names one, ForeverDB's main monster (English name)
   readonly mobs = computed(() => {
     const c = this.data.catalog();
     const id = this.scrollId();
     const all = this.npcs();
     const drops = (id && c?.scrollDrops[id] ? [...c.scrollDrops[id]] : []).sort((a, b) => b[1] - a[1]);
-    const list: { id: string; rate: number | null; zone: string | null; npc: NpcInfo | null }[] = drops.map(([npc, rate]) => ({
-      id: String(npc),
-      rate,
-      zone: null,
-      npc: (all[npc] as NpcInfo | undefined) ?? null,
-    }));
+    const list: Mob[] = drops.map(([npc, rate]) => ({ id: String(npc), name: null, rate, zone: null, npc: this.npcOf(all, npc) }));
     for (const m of this.whNpcs())
       if (m.kind === 'drop' && !list.some((x) => x.id === String(m.npc)))
-        list.push({ id: String(m.npc), rate: null, zone: m.zone, npc: (all[m.npc] as NpcInfo | undefined) ?? null });
+        list.push({ id: String(m.npc), name: m.name, rate: null, zone: m.zone, npc: this.npcOf(all, m.npc) });
+    const d = this.fdb()?.d;
+    if (!list.length && d) list.push({ id: null, name: d[0], rate: d[1], zone: null, npc: null });
     return list;
   });
+  readonly dropNote = computed(() => {
+    const f = this.fdb();
+    const parts: string[] = [];
+    if (f?.d && f.d[2] > this.mobs().length) parts.push(`Lâché par ${f.d[2]} monstres au total.`);
+    if (f?.s?.[0]) parts.push(`Vu tomber ${f.s[0]} fois chez ${f.s[1]} joueur(s) dans Forever.`);
+    return parts.join(' ');
+  });
+
+  // Vendors from the three sources, merged by NPC
   readonly vendors = computed(() => {
     const c = this.data.catalog();
     const id = this.scrollId();
     const all = this.npcs();
-    const list: { id: string; stock: number | null; zone: string | null; npc: NpcInfo | null }[] = (
-      id && c?.limited[id] ? c.limited[id] : []
-    ).map(([npc, stock]) => ({ id: String(npc), stock, zone: null, npc: (all[npc] as NpcInfo | undefined) ?? null }));
+    const src = this.sources();
+    const byId = new Map<string, Vendor>();
+    const get = (npc: number | string) => {
+      const key = String(npc);
+      let v = byId.get(key);
+      if (!v) {
+        v = { id: key, name: null, zone: null, coords: null, side: null, price: null, stock: null, limited: false, unseen: false, npc: this.npcOf(all, key) };
+        byId.set(key, v);
+      }
+      return v;
+    };
+    for (const [npc, stock] of id ? (c?.limited[id] ?? []) : []) get(npc).stock = stock;
     for (const m of this.whNpcs())
-      if (m.kind === 'vendor' && !list.some((x) => x.id === String(m.npc)))
-        list.push({ id: String(m.npc), stock: null, zone: m.zone, npc: (all[m.npc] as NpcInfo | undefined) ?? null });
-    return list;
+      if (m.kind === 'vendor') Object.assign(get(m.npc), { name: m.name, zone: m.zone });
+    for (const [npc, price, limited] of src?.fdb?.v ?? []) {
+      const v = get(npc);
+      const info = src?.fdbNpcs[npc];
+      v.price = price || null;
+      v.limited ||= Boolean(limited);
+      if (info) {
+        v.name ??= info[0];
+        v.coords ??= info[1] !== null && info[2] !== null ? [info[1], info[2]] : null;
+        v.side = info[3];
+        v.unseen = !info[4];
+      }
+    }
+    // seen in Forever first, then by faction and name
+    return [...byId.values()].sort(
+      (a, b) => Number(a.unseen) - Number(b.unseen) || (a.side ?? '').localeCompare(b.side ?? '') || (a.npc?.name ?? a.name ?? '').localeCompare(b.npc?.name ?? b.name ?? ''),
+    );
   });
-  // kinds of source Wowhead knows but nothing above details
-  readonly otherKinds = computed(() => {
-    const s = this.sources();
-    if (!s) return [];
-    const shown = new Set<string>();
-    if (this.vendors().length) shown.add(KINDS[5]);
-    if (this.quests().length) shown.add(KINDS[4]);
-    if (this.mobs().length || this.worldDrop()) shown.add(KINDS[2]);
-    return [...new Set(s.source.map((k) => KINDS[k]).filter((k) => k && !shown.has(k)))];
-  });
+  readonly shownVendors = computed(() => (this.allVendors() ? this.vendors() : this.vendors().slice(0, SHOWN)));
+  // vendors ForeverDB counts but doesn't list
+  readonly moreVendors = computed(() => Math.max(0, (this.fdb()?.vc ?? 0) - Math.max(this.vendors().length, this.fdb()?.v?.length ?? 0)));
+
   readonly trainers = computed(() => {
     const c = this.data.catalog();
     const set = this.recipe()?.tr;
     const all = this.npcs();
     return (set && c?.trainerSets?.[set] ? c.trainerSets[set] : [])
-      .map((npc) => ({ id: String(npc), npc: (all[npc] as NpcInfo | undefined) ?? null }))
-      .sort(
-        (a, b) =>
-          (a.npc?.zone ?? '~').localeCompare(b.npc?.zone ?? '~') || (a.npc?.name ?? '').localeCompare(b.npc?.name ?? ''),
-      );
+      .map((npc) => ({ id: String(npc), npc: this.npcOf(all, npc) }))
+      .sort((a, b) => (a.npc?.zone ?? '~').localeCompare(b.npc?.zone ?? '~') || (a.npc?.name ?? '').localeCompare(b.npc?.name ?? ''));
   });
-  readonly shownTrainers = computed(() => (this.allTrainers() ? this.trainers() : this.trainers().slice(0, TRAINERS_SHOWN)));
+  readonly shownTrainers = computed(() => (this.allTrainers() ? this.trainers() : this.trainers().slice(0, SHOWN)));
+
   readonly worldDrop = computed(() => {
     const id = this.scrollId();
     return Boolean(id && this.data.catalog()?.worldDrops.includes(id));
+  });
+  // kinds of source Wowhead knows but nothing above details
+  readonly otherKinds = computed(() => {
+    const s = this.sources()?.source;
+    if (!s) return [];
+    const shown = new Set<string>();
+    if (this.vendors().length) shown.add(KINDS[5]);
+    if (this.quests().length) shown.add(KINDS[4]);
+    if (this.mobs().length || this.worldDrop()) shown.add(KINDS[2]);
+    return [...new Set(s.map((k) => KINDS[k]).filter((k) => k && !shown.has(k)))];
   });
   readonly nothing = computed(
     () =>
@@ -291,24 +407,30 @@ export class ObtainDialogComponent implements OnDestroy {
   );
   readonly loading = computed(() => this.pending() > 0);
 
-  // NPC ids to ask, from the catalog only (not from the NPCs received: no new round for each answer).
-  // Monsters and vendors first: they are the fewest.
+  // NPC ids to ask Wowhead for (French name, zone, position, level), from the catalog and the pattern's
+  // sources only (not from the NPCs received: no new round for each answer). Monsters and vendors first.
   private readonly ids = computed(() => {
     const c = this.data.catalog();
     const id = this.scrollId();
     const set = this.recipe()?.tr;
     return [
-      ...(id ? (c?.scrollDrops[id] ?? []) : []).map(([npc]) => npc),
-      ...(id ? (c?.limited[id] ?? []) : []).map(([npc]) => npc),
-      ...this.whNpcs().map((m) => m.npc),
-      ...((set && c?.trainerSets?.[set]) || []),
-    ].map(String);
+      ...new Set(
+        [
+          ...(id ? (c?.scrollDrops[id] ?? []) : []).map(([npc]) => npc),
+          ...(id ? (c?.limited[id] ?? []) : []).map(([npc]) => npc),
+          ...this.whNpcs().map((m) => m.npc),
+          ...(this.fdb()?.v ?? []).map(([npc]) => npc),
+          ...((set && c?.trainerSets?.[set]) || []),
+        ].map(String),
+      ),
+    ];
   });
 
   constructor() {
     effect(() => {
       const id = this.scrollId();
-      if (id && !knownPatterns.has(String(id))) queueMicrotask(() => this.fetchPattern(String(id), 0));
+      const have = id ? knownPatterns.get(String(id)) : null;
+      if (id && !have?.more) queueMicrotask(() => this.fetchPattern(String(id), 0));
     });
     effect(() => {
       const ids = this.ids().filter((id) => !known.has(id));
@@ -323,7 +445,10 @@ export class ObtainDialogComponent implements OnDestroy {
 
   ngOnDestroy() {
     this.alive = false;
-    if (this.timer) clearTimeout(this.timer);
+  }
+
+  private npcOf(all: Record<string, NpcInfo>, id: number | string) {
+    return (all[id] as NpcInfo | undefined) ?? null;
   }
 
   // The bot answers those it has, and asks Wowhead for the others (about one a second): ask again
@@ -342,10 +467,10 @@ export class ObtainDialogComponent implements OnDestroy {
     if (!this.alive) return;
     if (!missing.length || round >= 15) return this.pending.set(0);
     this.pending.set(missing.length);
-    this.timer = setTimeout(() => this.fetch(missing, round + 1), 3000);
+    setTimeout(() => this.fetch(missing, round + 1), 3000);
   }
 
-  // Wowhead's sources of the pattern (asked from the bot, which may have to fetch them first)
+  // The pattern's sources: ForeverDB's at once, Wowhead's once the bot has them (asked again meanwhile)
   private async fetchPattern(id: string, round: number) {
     if (!this.alive) return;
     this.patternLoading.set(true);
@@ -371,9 +496,25 @@ export class ObtainDialogComponent implements OnDestroy {
     return n.coords ? `${n.zone} · ${n.coords[0]}, ${n.coords[1]}` : n.zone;
   }
 
+  // Wowhead's zone (French) and position, else ForeverDB's position
+  vendorPlace(v: Vendor) {
+    const zone = v.npc?.zone ?? v.zone;
+    const coords = v.npc?.coords ?? v.coords;
+    if (!zone && !coords) return v.npc ? 'zone inconnue' : '…';
+    return [zone, coords ? `${coords[0]}, ${coords[1]}` : null].filter(Boolean).join(' · ');
+  }
+
   kindText(n: NpcInfo) {
     const level = n.level ? `niv. ${n.level.replace(' - ', '-')}` : null;
     return [n.kind, level].filter(Boolean).join(', ');
+  }
+
+  rank(r: number) {
+    return RANKS[r] ?? `rang ${r}`;
+  }
+
+  search(name: string) {
+    return `${WOWHEAD}/search?q=${encodeURIComponent(name)}`;
   }
 
   rate(r: number) {
