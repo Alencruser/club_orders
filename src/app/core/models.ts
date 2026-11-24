@@ -191,11 +191,12 @@ export interface AdminSettingsValues {
   spy: { statusMin: number; reminderMin: number };
   activity: { remindBeforeMin: number; expireAfterMin: number };
   versions: { minAddon: string; minCompanion: string }; // '' = no minimum
+  battletags: { minLevel: number; perCard: number; order: 'joined' | 'name' | 'level' }; // the Discord board
 }
 export interface AdminSettings {
   settings: AdminSettingsValues;
   defaults: AdminSettingsValues;
-  limits: Record<string, Record<string, [number, number, boolean] | 'version'>>; // [min, max, 0 allowed]
+  limits: Record<string, Record<string, [number, number, boolean] | 'version' | string[]>>; // [min, max, 0 allowed] | choices
 }
 // 🚶 Suivi tab: every follow session, to ignore or delete
 export interface AdminFollowSession {

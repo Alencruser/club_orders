@@ -13,9 +13,29 @@ interface Field {
   hint: string;
   off?: string; // shown when the value is 0 (or empty for a version)
   version?: boolean; // a version like 0.6.6 instead of minutes
+  unit?: string; // a number in this unit instead of minutes (ex. « niveau », « persos »)
+  choices?: { value: string; label: string }[]; // a menu instead of a number
 }
 
 const BLOCKS: Record<Section, { title: string; intro: string; fields: Field[] }> = {
+  battletags: {
+    title: '🏷️ Carte des battletags',
+    intro: 'La carte publique des battletags sur Discord, redessinée dès l’enregistrement.',
+    fields: [
+      { key: 'minLevel', label: 'Persos montrés à partir du niveau', hint: 'les plus bas sont cachés de la carte', off: 'tous les persos', unit: 'niveau' },
+      { key: 'perCard', label: 'Persos par joueur, au plus', hint: 'puis « +N autre(s) »', unit: 'persos' },
+      {
+        key: 'order',
+        label: 'Ordre des joueurs',
+        hint: '',
+        choices: [
+          { value: 'joined', label: 'Ordre d’inscription' },
+          { value: 'name', label: 'Alphabétique' },
+          { value: 'level', label: 'Plus haut niveau d’abord' },
+        ],
+      },
+    ],
+  },
   versions: {
     title: '🛡️ Versions minimales',
     intro:
@@ -82,6 +102,10 @@ const BLOCKS: Record<Section, { title: string; intro: string; fields: Field[] }>
               <span class="muted small">
                 @if (f.version) {
                   {{ values[f.key] ? 'refusé en dessous de ' + values[f.key] : f.off }}
+                } @else if (f.choices) {
+                  par défaut : {{ choiceLabel(f, '' + defaultOf(d, f.key)) }}
+                } @else if (f.unit) {
+                  {{ f.off && !+values[f.key] ? f.off + ' · ' : '' }}par défaut {{ defaultOf(d, f.key) || 'aucun' }} · {{ range(d, f.key, f.unit) }}
                 } @else {
                   @if (f.off && values[f.key] === 0) {
                     {{ f.off }} ·
@@ -95,6 +119,14 @@ const BLOCKS: Record<Section, { title: string; intro: string; fields: Field[] }>
             <span class="set-value">
               @if (f.version) {
                 <input [(ngModel)]="values[f.key]" maxlength="12" placeholder="aucun" />
+              } @else if (f.choices) {
+                <select [(ngModel)]="values[f.key]">
+                  @for (c of f.choices; track c.value) {
+                    <option [ngValue]="c.value">{{ c.label }}</option>
+                  }
+                </select>
+              } @else if (f.unit) {
+                <input type="number" [(ngModel)]="values[f.key]" [min]="0" step="1" /> {{ f.unit }}
               } @else {
                 <input type="number" [(ngModel)]="values[f.key]" [min]="0" [step]="5" /> min
               }
@@ -156,11 +188,17 @@ export class AdminSettingsBlockComponent {
     return (d.defaults[this.section()] as Record<string, number | string>)[key];
   }
 
-  range(d: AdminSettings, key: string) {
+  // unit: a plain number (« niveau », « persos »), else minutes
+  range(d: AdminSettings, key: string, unit?: string) {
     const limit = d.limits[this.section()][key];
-    if (limit === 'version') return '';
-    const [min, max, off] = limit;
-    return `${this.human(min)} à ${this.human(max)}${off ? ', 0 pour couper' : ''}`;
+    if (limit === 'version' || typeof limit[0] === 'string') return '';
+    const [min, max, off] = limit as [number, number, boolean];
+    const show = (n: number) => (unit ? String(n) : this.human(n));
+    return `${show(min)} à ${show(max)}${off ? ', 0 pour tous' : ''}`;
+  }
+
+  choiceLabel(f: Field, value: string) {
+    return f.choices?.find((c) => c.value === value)?.label ?? value;
   }
 
   human(min: number) {
@@ -178,7 +216,7 @@ export class AdminSettingsBlockComponent {
   async save() {
     this.busy.set(true);
     try {
-      const versionKeys = new Set(this.block().fields.filter((f) => f.version).map((f) => f.key));
+      const versionKeys = new Set(this.block().fields.filter((f) => f.version || f.choices).map((f) => f.key));
       const values = Object.fromEntries(
         Object.entries(this.values).map(([k, v]) => [k, versionKeys.has(k) ? String(v ?? '').trim() : Math.round(Number(v))]),
       );
@@ -199,6 +237,7 @@ export class AdminSettingsBlockComponent {
   imports: [AdminSettingsBlockComponent],
   template: `
     <div class="admin-grid">
+      <app-admin-settings-block section="battletags" />
       <app-admin-settings-block section="versions" />
       <app-admin-settings-block section="activity" />
       <app-admin-settings-block section="spy" />
