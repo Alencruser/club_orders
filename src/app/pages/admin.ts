@@ -25,6 +25,62 @@ import { AdminLogComponent } from './admin-log';
 
 type Tab = 'status' | 'channels' | 'anomalies' | 'versions' | 'bank' | 'directory' | 'spy' | 'follow' | 'tiers' | 'settings' | 'data' | 'tools';
 const TABS: Tab[] = ['status', 'channels', 'anomalies', 'versions', 'bank', 'directory', 'spy', 'follow', 'tiers', 'settings', 'data', 'tools'];
+
+// The tabs in 5 menus, each with a plain-French help (❓): who reads it isn't always a developer
+interface TabInfo {
+  key: Tab;
+  label: string;
+  help: string;
+}
+interface TabGroup {
+  key: string;
+  label: string;
+  tabs: TabInfo[];
+}
+const GROUPS: TabGroup[] = [
+  {
+    key: 'overview',
+    label: '🏠 Vue d’ensemble',
+    tabs: [
+      { key: 'status', label: '🛰️ État', help: 'La santé du bot : s’il tourne, ce qui est à régler, ce qui est en attente, et le journal de qui a fait quoi sur cette page. À regarder en premier.' },
+      { key: 'anomalies', label: '🚨 Anomalies', help: 'Les erreurs rencontrées par le bot. 🔴 : à régler vite ; 🟠 : à surveiller. Quand c’est réglé, marque-la comme résolue.' },
+      { key: 'versions', label: '📦 Versions', help: 'Qui a l’addon et le compagnon à jour. Coche ceux qui sont en retard pour les relancer sur Discord, gentiment ou en les taquinant.' },
+    ],
+  },
+  {
+    key: 'players',
+    label: '👥 Joueurs',
+    tabs: [
+      { key: 'directory', label: '📇 Annuaire', help: 'Les joueurs, leur battletag et leurs persos. Relie un perso à son joueur, délie un perso qui n’est pas à lui, mets à la corbeille un perso supprimé en jeu (on peut toujours le rétablir), repère les persos 💤 inactifs.' },
+      { key: 'follow', label: '🚶 Suivi', help: 'Le temps passé à suivre un guildeux en /follow, session par session. Ignore une session anormale (AFK) pour qu’elle ne compte plus, ou supprime-la.' },
+    ],
+  },
+  {
+    key: 'guild',
+    label: '💰 Guilde',
+    tabs: [
+      { key: 'bank', label: '🏦 Banque', help: 'L’objectif de la barre de la banque (nom et montant) et la liste « Jamais donné » : depuis combien de jours, et qui ne doit pas y apparaître.' },
+      { key: 'tiers', label: '🏆 Paliers', help: 'Ajoute un haut fait sur ce que le bot mesure déjà (ex. un dépôt de 10 po). Ceux qui l’ont déjà le débloquent tout de suite, dans une seule annonce.' },
+    ],
+  },
+  {
+    key: 'config',
+    label: '⚙️ Configuration',
+    tabs: [
+      { key: 'channels', label: '🔗 Salons', help: 'Dans quel salon Discord le bot poste chaque chose : morts, level-ups, banque, classement… Choisis un salon et enregistre.' },
+      { key: 'settings', label: '⚙️ Réglages', help: 'Les réglages du bot : la carte des battletags, les versions minimales de l’addon et du compagnon, les activités, les messages automatiques des espions.' },
+      { key: 'spy', label: '🕵️ Espionnage', help: 'Les bots qui comptent le temps de parole dans les salons vocaux : lance-les, arrête-les, demande un rapport.' },
+      { key: 'tools', label: '🛠️ Outils', help: 'Les outils techniques : filtres du compagnon, tableau des métiers, mise à jour des recettes, tests des salons. À toucher si quelque chose ne marche plus.' },
+    ],
+  },
+  {
+    key: 'data',
+    label: '🗂️ Données',
+    tabs: [
+      { key: 'data', label: '🗂️ Données', help: 'Les données brutes qui n’ont pas d’autre onglet : classement, activités en cours, métiers, commandes. Supprime des lignes, ou remets les niveaux et le classement à zéro.' },
+    ],
+  },
+];
 const SEVERITY = { red: '🔴', orange: '🟠', benign: '⚪' } as const;
 const AUTO_REFRESH_MS = 60 * 1000;
 
@@ -33,50 +89,65 @@ const AUTO_REFRESH_MS = 60 * 1000;
 // sent back home. Step 1: status, channels, anomalies (data and tools come next).
 @Component({
   selector: 'app-admin',
+  // only loaded with /admin (lazy chunk): the sub-tabs of a menu and the ❓ help
+  styles: `
+    .admin-subtabs {
+      margin: -0.4rem 0 0.6rem;
+      button {
+        font-size: 0.9em;
+      }
+    }
+    .admin-help {
+      margin: 0 0 0.5rem;
+      .btn {
+        padding: 0.15rem 0.6rem;
+        font-size: 0.85em;
+      }
+    }
+    .admin-help-text {
+      margin: 0.4rem 0 0;
+      padding: 0.6rem 0.9rem;
+      max-width: 60rem;
+    }
+  `,
   imports: [DatePipe, FormsModule, AdminDataComponent, AdminToolsComponent, AdminBankComponent, AdminDirectoryComponent, AdminSpyComponent, AdminFollowComponent, AdminTiersComponent, AdminSettingsComponent, AdminLogComponent],
   template: `
     @if (state(); as s) {
       <div class="page-head">
         <h1>Tableau de bord</h1>
         <div class="tabs admin-tabs">
-          <button type="button" [class.active]="tab() === 'status'" (click)="go('status')">
-            🛰️ État
-            @if (s.warnings.length) {
-              <span class="badge">{{ s.warnings.length }}</span>
-            }
-          </button>
-          <button type="button" [class.active]="tab() === 'channels'" (click)="go('channels')">
-            🔗 Salons
-            @if (slotProblems()) {
-              <span class="badge">{{ slotProblems() }}</span>
-            }
-          </button>
-          <button type="button" [class.active]="tab() === 'anomalies'" (click)="go('anomalies')">
-            🚨 Anomalies
-            @if (s.anomalies.items.length) {
-              <span class="badge" [class.dim]="!s.anomalies.counts.red">{{
-                s.anomalies.items.length
-              }}</span>
-            }
-          </button>
-          <button type="button" [class.active]="tab() === 'versions'" (click)="go('versions')">
-            📦 Versions
-            @if (behind().length) {
-              <span class="badge dim">{{ behind().length }}</span>
-            }
-          </button>
-          <button type="button" [class.active]="tab() === 'bank'" (click)="go('bank')">🏦 Banque</button>
-          <button type="button" [class.active]="tab() === 'directory'" (click)="go('directory')">📇 Annuaire</button>
-          <button type="button" [class.active]="tab() === 'spy'" (click)="go('spy')">🕵️ Espionnage</button>
-          <button type="button" [class.active]="tab() === 'follow'" (click)="go('follow')">🚶 Suivi</button>
-          <button type="button" [class.active]="tab() === 'tiers'" (click)="go('tiers')">🏆 Paliers</button>
-          <button type="button" [class.active]="tab() === 'settings'" (click)="go('settings')">⚙️ Réglages</button>
-          <button type="button" [class.active]="tab() === 'data'" (click)="go('data')">🗂️ Données</button>
-          <button type="button" [class.active]="tab() === 'tools'" (click)="go('tools')">🛠️ Outils</button>
+          @for (g of groups; track g.key) {
+            <button type="button" [class.active]="group().key === g.key" (click)="go(g.tabs[0].key)">
+              {{ g.label }}
+              @if (groupBadge(g); as b) {
+                <span class="badge" [class.dim]="b.dim">{{ b.count }}</span>
+              }
+            </button>
+          }
         </div>
         <button type="button" class="btn ghost" [disabled]="loading()" (click)="load()">
           🔄 {{ loading() ? 'Lecture…' : 'Actualiser' }}
         </button>
+      </div>
+      @if (group().tabs.length > 1) {
+        <div class="tabs admin-subtabs">
+          @for (t of group().tabs; track t.key) {
+            <button type="button" [class.active]="tab() === t.key" (click)="go(t.key)">
+              {{ t.label }}
+              @if (badge(t.key); as b) {
+                <span class="badge" [class.dim]="b.dim">{{ b.count }}</span>
+              }
+            </button>
+          }
+        </div>
+      }
+      <div class="admin-help">
+        <button type="button" class="btn ghost" (click)="helpOpen.set(!helpOpen())" [attr.aria-expanded]="helpOpen()">
+          ❓ {{ helpOpen() ? 'Masquer l’aide' : 'À quoi sert cet onglet ?' }}
+        </button>
+        @if (helpOpen()) {
+          <p class="tooltip admin-help-text">{{ current().help }}</p>
+        }
       </div>
       <p class="muted small admin-updated">
         Mis à jour à {{ s.now | date: 'HH:mm:ss' }} · actualisé toutes les minutes. Le tableau de
@@ -513,6 +584,10 @@ export class AdminPage {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly tab = signal<Tab>(this.tabFromHash());
+  readonly groups = GROUPS;
+  readonly helpOpen = signal(false);
+  readonly group = computed(() => GROUPS.find((g) => g.tabs.some((t) => t.key === this.tab())) ?? GROUPS[0]);
+  readonly current = computed(() => this.group().tabs.find((t) => t.key === this.tab()) ?? this.group().tabs[0]);
   readonly channels = signal<AdminChannel[]>([]);
   readonly picks = signal<Record<string, string>>({}); // slot key → chosen channel (not saved yet)
   readonly saving = signal<string | null>(null);
@@ -579,8 +654,30 @@ export class AdminPage {
     return TABS.includes(hash) ? hash : 'status';
   }
 
+  // the little count on a tab: things to look at (dim: nothing urgent)
+  badge(tab: Tab): { count: number; dim: boolean } | null {
+    const s = this.state();
+    if (!s) return null;
+    const count =
+      tab === 'status' ? s.warnings.length
+      : tab === 'channels' ? this.slotProblems()
+      : tab === 'anomalies' ? s.anomalies.items.length
+      : tab === 'versions' ? this.behind().length
+      : 0;
+    if (!count) return null;
+    const dim = tab === 'versions' || (tab === 'anomalies' && !s.anomalies.counts.red);
+    return { count, dim };
+  }
+
+  groupBadge(g: TabGroup) {
+    const all = g.tabs.map((t) => this.badge(t.key)).filter((b): b is { count: number; dim: boolean } => Boolean(b));
+    if (!all.length) return null;
+    return { count: all.reduce((n, b) => n + b.count, 0), dim: all.every((b) => b.dim) };
+  }
+
   go(tab: Tab) {
     this.tab.set(tab);
+    this.helpOpen.set(false);
     history.replaceState(null, '', `#${tab}`);
   }
 
