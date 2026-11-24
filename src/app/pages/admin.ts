@@ -461,6 +461,11 @@ const AUTO_REFRESH_MS = 60 * 1000;
                           <span class="muted">❓ inconnu</span>
                         }
                       }
+                      @if (m.blocked) {
+                        <br /><span class="bad small" [title]="m.blocked.reason ?? ''"
+                          >⛔ bloqué le {{ m.blocked.at * 1000 | date: 'dd/MM HH:mm' }}</span
+                        >
+                      }
                     </td>
                     <td [class.bad]="isOld(m.addon, v.latest.addon)">
                       addon {{ m.addon ? 'v' + m.addon : '?' }}

@@ -11,10 +11,22 @@ interface Field {
   key: string;
   label: string;
   hint: string;
-  off?: string; // shown when the value is 0
+  off?: string; // shown when the value is 0 (or empty for a version)
+  version?: boolean; // a version like 0.6.6 instead of minutes
 }
 
 const BLOCKS: Record<Section, { title: string; intro: string; fields: Field[] }> = {
+  versions: {
+    title: '🛡️ Versions minimales',
+    intro:
+      'Garde-fou : un envoi d’un addon ou d’un compagnon plus ancien (ou sans version connue, compagnon avant 0.7.5) ' +
+      'n’est pas rangé. Le compagnon le garde et le renvoie : il passe dès que le joueur est à jour. Les bloqués ' +
+      'apparaissent dans 📦 Versions.',
+    fields: [
+      { key: 'minAddon', label: 'Addon au moins', hint: 'ex. 0.6.6', off: 'aucun minimum', version: true },
+      { key: 'minCompanion', label: 'Compagnon au moins', hint: 'ex. 0.7.5', off: 'aucun minimum', version: true },
+    ],
+  },
   spy: {
     title: '⏱️ Messages automatiques des espions',
     intro: 'Communs aux trois espions (bot principal, Espion bot, tourne-disque), pendant une session vocale.',
@@ -68,16 +80,24 @@ const BLOCKS: Record<Section, { title: string; intro: string; fields: Field[] }>
               {{ f.label }}
               <span class="muted small">{{ f.hint }}</span><br />
               <span class="muted small">
-                @if (f.off && values[f.key] === 0) {
-                  {{ f.off }} ·
+                @if (f.version) {
+                  {{ values[f.key] ? 'refusé en dessous de ' + values[f.key] : f.off }}
                 } @else {
-                  {{ human(values[f.key]) }} ·
+                  @if (f.off && values[f.key] === 0) {
+                    {{ f.off }} ·
+                  } @else {
+                    {{ human(+values[f.key]) }} ·
+                  }
+                  par défaut {{ human(+defaultOf(d, f.key)) }} · {{ range(d, f.key) }}
                 }
-                par défaut {{ human(defaultOf(d, f.key)) }} · {{ range(d, f.key) }}
               </span>
             </span>
             <span class="set-value">
-              <input type="number" [(ngModel)]="values[f.key]" [min]="0" [step]="5" /> min
+              @if (f.version) {
+                <input [(ngModel)]="values[f.key]" maxlength="12" placeholder="aucun" />
+              } @else {
+                <input type="number" [(ngModel)]="values[f.key]" [min]="0" [step]="5" /> min
+              }
             </span>
           </div>
         }
@@ -105,7 +125,7 @@ export class AdminSettingsBlockComponent {
   readonly data = signal<AdminSettings | null>(null);
   readonly error = signal<string | null>(null);
   readonly busy = signal(false);
-  values: Record<string, number> = {};
+  values: Record<string, number | string> = {};
   private tick = signal(0); // values is a plain object: re-check changed() after each edit
 
   constructor() {
@@ -122,22 +142,24 @@ export class AdminSettingsBlockComponent {
 
   private apply(d: AdminSettings) {
     this.data.set(d);
-    this.values = { ...(d.settings[this.section()] as Record<string, number>) };
+    this.values = { ...(d.settings[this.section()] as Record<string, number | string>) };
     this.error.set(null);
   }
 
   changed() {
     this.tick();
-    const saved = this.data()?.settings[this.section()] as Record<string, number> | undefined;
-    return Boolean(saved && Object.keys(saved).some((k) => Number(this.values[k]) !== saved[k]));
+    const saved = this.data()?.settings[this.section()] as Record<string, number | string> | undefined;
+    return Boolean(saved && Object.keys(saved).some((k) => String(this.values[k] ?? '').trim() !== String(saved[k])));
   }
 
   defaultOf(d: AdminSettings, key: string) {
-    return (d.defaults[this.section()] as Record<string, number>)[key];
+    return (d.defaults[this.section()] as Record<string, number | string>)[key];
   }
 
   range(d: AdminSettings, key: string) {
-    const [min, max, off] = d.limits[this.section()][key];
+    const limit = d.limits[this.section()][key];
+    if (limit === 'version') return '';
+    const [min, max, off] = limit;
     return `${this.human(min)} à ${this.human(max)}${off ? ', 0 pour couper' : ''}`;
   }
 
@@ -149,14 +171,17 @@ export class AdminSettingsBlockComponent {
   }
 
   reset(d: AdminSettings) {
-    this.values = { ...(d.defaults[this.section()] as Record<string, number>) };
+    this.values = { ...(d.defaults[this.section()] as Record<string, number | string>) };
     this.tick.update((x) => x + 1);
   }
 
   async save() {
     this.busy.set(true);
     try {
-      const values = Object.fromEntries(Object.entries(this.values).map(([k, v]) => [k, Math.round(Number(v))]));
+      const versionKeys = new Set(this.block().fields.filter((f) => f.version).map((f) => f.key));
+      const values = Object.fromEntries(
+        Object.entries(this.values).map(([k, v]) => [k, versionKeys.has(k) ? String(v ?? '').trim() : Math.round(Number(v))]),
+      );
       this.apply(await this.api.adminSaveSettings(this.section(), values));
       this.toast.ok('✅ Réglages enregistrés.');
     } catch (err) {
@@ -174,6 +199,7 @@ export class AdminSettingsBlockComponent {
   imports: [AdminSettingsBlockComponent],
   template: `
     <div class="admin-grid">
+      <app-admin-settings-block section="versions" />
       <app-admin-settings-block section="activity" />
       <app-admin-settings-block section="spy" />
     </div>

@@ -200,7 +200,7 @@ export class ApiService {
   adminSettings() {
     return this.get<AdminSettings>('/api/admin/settings');
   }
-  adminSaveSettings(section: keyof AdminSettingsValues, values: Record<string, number>) {
+  adminSaveSettings(section: keyof AdminSettingsValues, values: Record<string, number | string>) {
     return this.post<AdminSettings>('/api/admin/settings', { section, values });
   }
 

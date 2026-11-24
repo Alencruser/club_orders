@@ -190,11 +190,12 @@ export interface AdminSpy {
 export interface AdminSettingsValues {
   spy: { statusMin: number; reminderMin: number };
   activity: { remindBeforeMin: number; expireAfterMin: number };
+  versions: { minAddon: string; minCompanion: string }; // '' = no minimum
 }
 export interface AdminSettings {
   settings: AdminSettingsValues;
   defaults: AdminSettingsValues;
-  limits: Record<string, Record<string, [number, number, boolean]>>; // [min, max, 0 allowed]
+  limits: Record<string, Record<string, [number, number, boolean] | 'version'>>; // [min, max, 0 allowed]
 }
 // 🚶 Suivi tab: every follow session, to ignore or delete
 export interface AdminFollowSession {
@@ -599,6 +600,7 @@ export interface AdminVersionMember {
   companion: string | null;
   at: number | null;
   status: 'ok' | 'late' | 'unknown';
+  blocked: { at: number; reason: string | null } | null; // last send refused by the minimum versions
 }
 
 export interface AdminVersions {
