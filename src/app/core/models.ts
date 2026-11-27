@@ -245,6 +245,51 @@ export interface AdminSettings {
   defaults: AdminSettingsValues;
   limits: Record<string, Record<string, [number, number, boolean] | 'version' | string[]>>; // [min, max, 0 allowed] | choices
 }
+// 🏅 Score (test) tab: the guild help score, recomputed by the bot (score.js). Weights: tenths of a point
+// (q*, b*, craft), percents (*Pct), points (goldFloor), all integers.
+export interface ScoreWeights {
+  qGrey: number;
+  qWhite: number;
+  qGreen: number;
+  qBlue: number;
+  qEpic: number;
+  effortMinPct: number;
+  effortMaxPct: number;
+  b1: number;
+  b20: number;
+  b40: number;
+  b50: number;
+  goldCapPct: number;
+  goldFloor: number;
+  autoPct: number;
+  craft: number;
+}
+export interface AdminScoreLine {
+  at: number; // ms
+  cat: 'items' | 'gold' | 'crafts';
+  points: number;
+  text: string;
+  calc: string;
+}
+export interface AdminScoreMember {
+  userId: string;
+  name: string;
+  gold: number; // after the cap
+  goldRaw: number;
+  capped: boolean;
+  items: number;
+  crafts: number;
+  total: number;
+  lines: AdminScoreLine[];
+}
+export interface AdminScore {
+  period: 'month' | 'all';
+  since: number; // ms, 0 for all
+  weights: ScoreWeights;
+  defaults: ScoreWeights;
+  members: AdminScoreMember[];
+  excluded: { at: number; text: string; reason: string }[];
+}
 // 📜 Journal des actions (État tab): one admin action
 export interface AdminLogEntry {
   at: number; // seconds

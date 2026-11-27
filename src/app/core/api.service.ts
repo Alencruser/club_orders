@@ -10,6 +10,8 @@ import {
   AdminSpy,
   AdminTiers,
   AdminFollow,
+  AdminScore,
+  ScoreWeights,
   AdminLogEntry,
   AdminSettings,
   AdminSettingsValues,
@@ -225,6 +227,14 @@ export class ApiService {
   }
   adminSaveSettings(section: keyof AdminSettingsValues, values: Record<string, number | string>) {
     return this.post<AdminSettings>('/api/admin/settings', { section, values });
+  }
+
+  // 🏅 Score (test) tab: recomputed at each call; weights saved as integers (see ScoreWeights)
+  adminScore(period: 'month' | 'all') {
+    return this.get<AdminScore>(`/api/admin/score?period=${period}`);
+  }
+  adminScoreWeights(values: Record<string, number>) {
+    return this.post<{ weights: ScoreWeights }>('/api/admin/score/weights', { values });
   }
 
   // 🚶 Suivi tab: a session is ignored (counted nowhere) or deleted, its time never changes

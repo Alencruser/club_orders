@@ -15,6 +15,7 @@ import {
 import { ToastService } from '../core/toast.service';
 import { AdminDataComponent } from './admin-data';
 import { AdminToolsComponent } from './admin-tools';
+import { AdminScoreComponent } from './admin-score';
 import { AdminBankComponent } from './admin-bank';
 import { AdminDirectoryComponent } from './admin-directory';
 import { AdminSpyComponent } from './admin-spy';
@@ -23,8 +24,8 @@ import { AdminFollowComponent } from './admin-follow';
 import { AdminSettingsComponent } from './admin-settings';
 import { AdminLogComponent } from './admin-log';
 
-type Tab = 'status' | 'channels' | 'anomalies' | 'versions' | 'bank' | 'directory' | 'spy' | 'follow' | 'tiers' | 'settings' | 'data' | 'tools';
-const TABS: Tab[] = ['status', 'channels', 'anomalies', 'versions', 'bank', 'directory', 'spy', 'follow', 'tiers', 'settings', 'data', 'tools'];
+type Tab = 'status' | 'channels' | 'anomalies' | 'versions' | 'bank' | 'directory' | 'spy' | 'follow' | 'tiers' | 'score' | 'settings' | 'data' | 'tools';
+const TABS: Tab[] = ['status', 'channels', 'anomalies', 'versions', 'bank', 'directory', 'spy', 'follow', 'tiers', 'score', 'settings', 'data', 'tools'];
 
 // The tabs in 5 menus, each with a plain-French help (❓): who reads it isn't always a developer
 interface TabInfo {
@@ -60,6 +61,7 @@ const GROUPS: TabGroup[] = [
     label: '💰 Guilde',
     tabs: [
       { key: 'bank', label: '🏦 Banque', help: 'L’objectif de la barre de la banque (nom et montant) et la liste « Jamais donné » : depuis combien de jours, et qui ne doit pas y apparaître.' },
+      { key: 'score', label: '🏅 Score (test)', help: 'Le score d’entraide en test, visible des admins seulement : dons d’objets pondérés par l’effort (niveau de l’objet ÷ niveau du donneur), or à la banque selon la tranche de niveau, fabrications. Clique un membre pour voir le détail du calcul, et règle la pondération en bas.' },
       { key: 'tiers', label: '🏆 Paliers', help: 'Ajoute un haut fait sur ce que le bot mesure déjà (ex. un dépôt de 10 po). Ceux qui l’ont déjà le débloquent tout de suite, dans une seule annonce.' },
     ],
   },
@@ -110,7 +112,7 @@ const AUTO_REFRESH_MS = 60 * 1000;
       max-width: 60rem;
     }
   `,
-  imports: [DatePipe, FormsModule, AdminDataComponent, AdminToolsComponent, AdminBankComponent, AdminDirectoryComponent, AdminSpyComponent, AdminFollowComponent, AdminTiersComponent, AdminSettingsComponent, AdminLogComponent],
+  imports: [DatePipe, FormsModule, AdminDataComponent, AdminToolsComponent, AdminBankComponent, AdminDirectoryComponent, AdminSpyComponent, AdminFollowComponent, AdminTiersComponent, AdminSettingsComponent, AdminLogComponent, AdminScoreComponent],
   template: `
     @if (state(); as s) {
       <div class="page-head">
@@ -466,6 +468,9 @@ const AUTO_REFRESH_MS = 60 * 1000;
       }
       @if (tab() === 'settings') {
         <app-admin-settings />
+      }
+      @if (tab() === 'score') {
+        <app-admin-score />
       }
       @if (tab() === 'tiers') {
         <app-admin-tiers />
