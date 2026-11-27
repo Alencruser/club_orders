@@ -27,6 +27,13 @@ import { DotComponent, IconComponent, MaterialsComponent, classColor } from './u
               }
             </p>
           </div>
+          @if (bop()) {
+            <span
+              class="bop-chip"
+              title="Lié quand ramassé : l’objet fabriqué ne s’échange pas, l’artisan ne peut pas le donner"
+              >🔒 LQR</span
+            >
+          }
           <span class="thresholds" title="Seuils de couleur : orange, jaune, vert, gris">
             <span class="c0">{{ r.t[0] }}</span> <span class="c1">{{ r.t[1] }}</span>
             <span class="c2">{{ r.t[2] }}</span> <span class="c3">{{ r.t[3] }}</span>
@@ -39,7 +46,7 @@ import { DotComponent, IconComponent, MaterialsComponent, classColor } from './u
               <div class="tt-line">
                 <span>
                   @for (p of l.left; track $index) {
-                    <span class="{{ p.cls }}">{{ p.text }}</span>
+                    <span class="{{ p.cls }}" [class.bop]="isBop(l)">{{ p.text }}</span>
                   }
                 </span>
                 @if (l.right.length) {
@@ -94,6 +101,9 @@ import { DotComponent, IconComponent, MaterialsComponent, classColor } from './u
           </div>
           @if (crafterNote(); as note) {
             <p class="note small">📝 {{ note }}</p>
+          }
+          @if (bop()) {
+            <p class="bop-note small">🔒 Objet lié quand ramassé : l’artisan ne pourra pas te le donner.</p>
           }
           <div class="card-actions">
             <div class="stepper">
@@ -160,6 +170,11 @@ export class RecipeCardComponent {
     // the first line repeats the name: it is already the title
     return (id && this.data.tooltips()[id]?.lines.slice(1, 14)) || [];
   });
+  // « Lié quand ramassé » (Bind on Pickup): the crafted item cannot be handed over
+  protected isBop(l: { left: { text: string }[] }) {
+    return /^(Lié quand ramassé|Binds when picked up)/i.test(l.left.map((p) => p.text).join('').trim());
+  }
+  readonly bop = computed(() => this.lines().some((l) => this.isBop(l)));
   readonly materials = computed(() =>
     this.data.materials([{ spell: this.spell(), qty: Math.max(1, this.recipe()?.o?.[1] ?? 1) }]),
   );
