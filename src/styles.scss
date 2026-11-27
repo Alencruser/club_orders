@@ -2899,9 +2899,8 @@ $da-frame-shadow:
   0 0 0 2px rgba(240, 196, 110, 0.35),
   0 12px 26px rgba(0, 0, 0, 0.6);
 
-// yellow strokes in the top-right corner; faint on the Grimoire cards, where they crossed the text
-$da-strokes: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='70' viewBox='0 0 90 70'%3E %3Cg stroke='%23f0a040' stroke-width='4' stroke-linecap='round' opacity='.85'%3E %3Cline x1='20' y1='12' x2='36' y2='30'/%3E%3Cline x1='44' y1='4' x2='48' y2='24'/%3E%3Cline x1='70' y1='8' x2='60' y2='28'/%3E %3Cline x1='8' y1='42' x2='28' y2='44'/%3E%3C/g%3E%3C/svg%3E") right 26px top 14px / 72px 56px no-repeat;
-$da-strokes-faint: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='70' viewBox='0 0 90 70'%3E %3Cg stroke='%23f0a040' stroke-width='4' stroke-linecap='round' opacity='.2'%3E %3Cline x1='20' y1='12' x2='36' y2='30'/%3E%3Cline x1='44' y1='4' x2='48' y2='24'/%3E%3Cline x1='70' y1='8' x2='60' y2='28'/%3E %3Cline x1='8' y1='42' x2='28' y2='44'/%3E%3C/g%3E%3C/svg%3E") right 26px top 14px / 72px 56px no-repeat;
+// yellow strokes in the top-right corner: faint everywhere (they crossed the text), the same on every frame
+$da-strokes: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='70' viewBox='0 0 90 70'%3E %3Cg stroke='%23f0a040' stroke-width='4' stroke-linecap='round' opacity='.2'%3E %3Cline x1='20' y1='12' x2='36' y2='30'/%3E%3Cline x1='44' y1='4' x2='48' y2='24'/%3E%3Cline x1='70' y1='8' x2='60' y2='28'/%3E %3Cline x1='8' y1='42' x2='28' y2='44'/%3E%3C/g%3E%3C/svg%3E") right 26px top 14px / 72px 56px no-repeat;
 $da-texture:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E %3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' seed='7' stitchTiles='stitch'/%3E %3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.62 0 0 0 0 0.38 10 0 0 0 -6.95'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.45'/%3E%3C/feComponentTransfer%3E%3C/filter%3E %3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E %3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035' numOctaves='4' seed='3' stitchTiles='stitch'/%3E %3CfeColorMatrix values='0 0 0 0 0.05 0 0 0 0 0 0 0 0 0 0 0 0 0 1.1 -0.45'/%3E%3C/filter%3E %3Crect width='100%25' height='100%25' filter='url(%23d)'/%3E%3C/svg%3E"),
@@ -2919,16 +2918,13 @@ $da-texture:
   background:
     $da-strokes,
     $da-texture;
+  // a frame that scrolls (large windows): the strokes and the texture stay at the top of the frame, they do
+  // not follow the scroll
+  background-attachment: local;
   color: #f6deb0;
 }
 .theme-forge .tooltip {
   padding: 30px 32px;
-}
-.theme-forge .card.tooltip,
-.theme-forge .card.tooltip:hover {
-  background:
-    $da-strokes-faint,
-    $da-texture;
 }
 // rows and cards in lists: same frame, less padding
 .theme-forge .order.tooltip,
