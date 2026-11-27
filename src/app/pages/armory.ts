@@ -470,13 +470,37 @@ function ago(at: number | null) {
       paint-order: stroke fill;
     }
     .grid {
+      position: relative;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 12px 8px;
       justify-items: center;
     }
+    .link {
+      position: absolute;
+      background: #6b6b6b;
+      box-shadow: 0 0 0 1px #1a0b06;
+      pointer-events: none;
+    }
+    .link.on {
+      background: var(--gold);
+    }
+    .link.down::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: -6px;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #6b6b6b;
+      border-bottom: 0;
+    }
+    .link.down.on::after {
+      border-top-color: var(--gold);
+    }
     .talent {
       position: relative;
+      z-index: 1;
       width: 44px;
       height: 44px;
       border-radius: 8px;
@@ -831,6 +855,17 @@ function ago(at: number | null) {
                       <span class="pts">{{ tree.points }}</span>
                     </header>
                     <div class="grid">
+                      @for (l of links(tree); track $index) {
+                        <span
+                          class="link"
+                          [class.on]="l.on"
+                          [class.down]="l.down"
+                          [style.left]="l.left"
+                          [style.top]="l.top"
+                          [style.width]="l.width"
+                          [style.height]="l.height"
+                        ></span>
+                      }
                       @for (cell of grid(tree.talents); track $index) {
                         @if (cell; as t) {
                           <div
@@ -1110,6 +1145,57 @@ export class ArmoryPage {
       if (i >= 0 && i < cells.length) cells[i] = t;
     }
     return cells;
+  }
+
+  // The game's lines between talents, under the icons: straight down in a column, or across a row (cells 44 px,
+  // rows 12 px apart, 4 equal columns). Gold when the talent it leads to has points.
+  links(tree: ArmoryDetail['talents'][number]) {
+    const ROW = 56;
+    const x = (col: number) => `${((col - 0.5) / 4) * 100}%`;
+    const out: { left: string; top: string; width: string; height: string; on: boolean; down: boolean }[] = [];
+    for (const { from, to } of tree.links ?? []) {
+      const target = tree.talents.find((t) => t.tier === to[0] && t.column === to[1]);
+      const on = Boolean(target?.rank);
+      const [a, b] = from[1] < to[1] ? [from[1], to[1]] : [to[1], from[1]];
+      if (from[1] === to[1] && to[0] > from[0]) {
+        out.push({
+          left: `calc(${x(from[1])} - 2px)`,
+          top: `${(from[0] - 1) * ROW + 44}px`,
+          width: '4px',
+          height: `${(to[0] - from[0]) * ROW - 50}px`,
+          on,
+          down: true,
+        });
+      } else if (from[0] === to[0]) {
+        out.push({
+          left: `calc(${x(a)} + 22px)`,
+          top: `${(from[0] - 1) * ROW + 20}px`,
+          width: `calc(${x(b)} - ${x(a)} - 44px)`,
+          height: '4px',
+          on,
+          down: false,
+        });
+      } else {
+        // across to the target's column on the source's row, then down to the target
+        out.push({
+          left: from[1] < to[1] ? `calc(${x(a)} + 22px)` : x(a),
+          top: `${(from[0] - 1) * ROW + 20}px`,
+          width: `calc(${x(b)} - ${x(a)} - 22px)`,
+          height: '4px',
+          on,
+          down: false,
+        });
+        out.push({
+          left: `calc(${x(to[1])} - 2px)`,
+          top: `${(from[0] - 1) * ROW + 20}px`,
+          width: '4px',
+          height: `${(to[0] - from[0]) * ROW - 26}px`,
+          on,
+          down: true,
+        });
+      }
+    }
+    return out;
   }
 
   private place(e: Event, lines: Line[], extra: [string, string][]) {

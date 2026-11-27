@@ -842,7 +842,8 @@ export interface ArmoryDetail extends ArmoryRow {
   race: string | null;
   gear: ArmoryGear[];
   stats: Record<string, number>;
-  talents: { name: string; points: number; talents: ArmoryTalent[] }[];
+  // links: the game's lines between talents ([tier, column] to [tier, column]), WoW Forever only
+  talents: { name: string; points: number; talents: ArmoryTalent[]; links?: { from: [number, number]; to: [number, number] }[] }[];
   items: Record<string, ArmoryItem>; // by "item:enchant:suffix"
   spells: Record<string, { icon: string; lines: { left: TextPiece[]; right: TextPiece[] }[] }>;
   craftable: Record<string, { profession: string | null; artisans: string[] }>;
