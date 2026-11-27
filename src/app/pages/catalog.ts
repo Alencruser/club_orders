@@ -25,6 +25,40 @@ const PROF_ICONS: Record<number, string> = {
 const LOCKPICKING = 633;
 const PAGE = 24;
 
+// « Emplacement » filter: the item's slot (game InventoryType) for armor and weapons, like the Discord
+// filter (bot crafts.js SLOTS), else its category; in this order in the list
+const SLOT_GROUPS: [number[], string][] = [
+  [[1], 'Tête'],
+  [[2], 'Cou'],
+  [[3], 'Épaules'],
+  [[16], 'Dos'],
+  [[5, 20], 'Torse'],
+  [[4], 'Chemise'],
+  [[19], 'Tabard'],
+  [[9], 'Poignets'],
+  [[10], 'Mains'],
+  [[6], 'Taille'],
+  [[7], 'Jambes'],
+  [[8], 'Pieds'],
+  [[11], 'Doigt'],
+  [[12], 'Bijou'],
+  [[13, 21], 'Une main'],
+  [[17], 'Deux mains'],
+  [[22, 23], 'Main gauche'],
+  [[14], 'Bouclier'],
+  [[15, 25, 26], 'Distance'],
+  [[24], 'Munitions'],
+];
+const CATEGORY_GROUPS = ['Consommables', 'Enchantements', 'Sacs', 'Composants et autres'];
+const GROUP_ORDER = [...SLOT_GROUPS.map(([, name]) => name), ...CATEGORY_GROUPS];
+function slotGroup(item: { slot: number; c: number | null } | null): string {
+  if (!item) return 'Enchantements'; // recipes without an item
+  if (item.c === 4 || item.c === 2) return SLOT_GROUPS.find(([types]) => types.includes(item.slot))?.[1] ?? 'Composants et autres';
+  if (item.c === 0) return 'Consommables';
+  if (item.c === 1) return 'Sacs';
+  return 'Composants et autres';
+}
+
 // The book: profession → artisan → recipe cards. The choice is in the address (?metier=165&artisan=…),
 // so a page can be shared and the back button works.
 @Component({
@@ -92,6 +126,15 @@ const PAGE = 24;
               <option [value]="2">Inhabituelle+</option>
               <option [value]="3">Rare+</option>
               <option [value]="4">Épique</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Emplacement</span>
+            <select [ngModel]="slotShown()" (ngModelChange)="slot.set($event); shown.set(PAGE)">
+              <option value="">Tous</option>
+              @for (g of slotChoices(); track g) {
+                <option [value]="g">{{ g }}</option>
+              }
             </select>
           </label>
           <label class="field small-field">
@@ -279,8 +322,8 @@ export class CatalogPage {
     () => this.data.artisans().find((a) => a.key === this.artisan())?.note ?? null,
   );
 
-  // Recipes shown: profession (or all when searching), artisan, filters; highest item level first
-  readonly list = computed(() => {
+  // Recipes matching every filter but the slot, with their slot group (the slot list is built from them)
+  readonly candidates = computed(() => {
     const catalog = this.data.catalog();
     if (!catalog) return [];
     const skill = this.profession();
@@ -290,7 +333,7 @@ export class CatalogPage {
     const crafters = this.data.crafters();
     const min = Number(this.minLevel()) || 0;
     const max = Number(this.maxLevel()) || 99;
-    const out: { spell: string; lvl: number; name: string }[] = [];
+    const out: { spell: string; lvl: number; name: string; group: string }[] = [];
     for (const [spell, r] of Object.entries(catalog.recipes)) {
       if (skill !== null && r.s !== skill) continue; // without a profession: search in every one
       if (known && !(spell in known)) continue;
@@ -301,9 +344,27 @@ export class CatalogPage {
       if (lvl < min || lvl > max) continue;
       const name = this.data.recipeName(spell);
       if (text && !name.toLowerCase().includes(text)) continue;
-      out.push({ spell, lvl, name });
+      out.push({ spell, lvl, name, group: slotGroup(item) });
     }
-    return out.sort((a, b) => b.lvl - a.lvl || a.name.localeCompare(b.name)).map((x) => x.spell);
+    return out;
+  });
+
+  // « Emplacement »: only the groups present in the profession (or the search results); a choice that is
+  // not there any more (another profession) counts as « Tous »
+  readonly slot = signal('');
+  readonly slotChoices = computed(() => {
+    const present = new Set(this.candidates().map((x) => x.group));
+    return GROUP_ORDER.filter((g) => present.has(g));
+  });
+  readonly slotShown = computed(() => (this.slotChoices().includes(this.slot()) ? this.slot() : ''));
+
+  // Recipes shown: profession (or all when searching), artisan, filters; highest item level first
+  readonly list = computed(() => {
+    const slot = this.slotShown();
+    return this.candidates()
+      .filter((x) => !slot || x.group === slot)
+      .sort((a, b) => b.lvl - a.lvl || a.name.localeCompare(b.name))
+      .map((x) => x.spell);
   });
 
   constructor() {
