@@ -25,6 +25,39 @@ const PROF_ICONS: Record<number, string> = {
 const LOCKPICKING = 633;
 const PAGE = 24;
 
+// « Type » filter: the armor's material or the weapon's kind (item class 4 armor / 2 weapon and its
+// subclass), in this order in the list; other items have none
+const TYPE_GROUPS: [number, number[], string][] = [
+  [4, [1], 'Tissu'],
+  [4, [2], 'Cuir'],
+  [4, [3], 'Mailles'],
+  [4, [4], 'Plaques'],
+  [4, [5, 6], 'Bouclier'],
+  [4, [7, 8, 9], 'Libram, idole, totem'],
+  [4, [0], 'Divers (bijoux, chemises…)'],
+  [2, [0], 'Hache à une main'],
+  [2, [1], 'Hache à deux mains'],
+  [2, [4], 'Masse à une main'],
+  [2, [5], 'Masse à deux mains'],
+  [2, [7], 'Épée à une main'],
+  [2, [8], 'Épée à deux mains'],
+  [2, [15], 'Dague'],
+  [2, [13], 'Arme de pugilat'],
+  [2, [6], 'Arme d’hast'],
+  [2, [10], 'Bâton'],
+  [2, [2], 'Arc'],
+  [2, [18], 'Arbalète'],
+  [2, [3], 'Arme à feu'],
+  [2, [16], 'Arme de jet'],
+  [2, [19], 'Baguette'],
+  [2, [14, 20], 'Autre arme'],
+];
+const TYPE_ORDER = TYPE_GROUPS.map(([, , name]) => name);
+function typeGroup(item: { c: number | null; sc: number | null } | null): string {
+  if (!item || item.sc === null) return '';
+  return TYPE_GROUPS.find(([c, subs]) => c === item.c && subs.includes(item.sc as number))?.[2] ?? '';
+}
+
 // « Emplacement » filter: the item's slot (game InventoryType) for armor and weapons, like the Discord
 // filter (bot crafts.js SLOTS), else its category; in this order in the list
 const SLOT_GROUPS: [number[], string][] = [
@@ -137,6 +170,17 @@ function slotGroup(item: { slot: number; c: number | null } | null): string {
               }
             </select>
           </label>
+          @if (typeChoices().length) {
+            <label class="field">
+              <span>Type</span>
+              <select [ngModel]="typeShown()" (ngModelChange)="type.set($event); shown.set(PAGE)">
+                <option value="">Tous</option>
+                @for (g of typeChoices(); track g) {
+                  <option [value]="g">{{ g }}</option>
+                }
+              </select>
+            </label>
+          }
           <label class="field small-field">
             <span>Niveau objet</span>
             <span class="range">
@@ -333,7 +377,7 @@ export class CatalogPage {
     const crafters = this.data.crafters();
     const min = Number(this.minLevel()) || 0;
     const max = Number(this.maxLevel()) || 99;
-    const out: { spell: string; lvl: number; yellow: number; name: string; group: string }[] = [];
+    const out: { spell: string; lvl: number; yellow: number; name: string; group: string; kind: string }[] = [];
     for (const [spell, r] of Object.entries(catalog.recipes)) {
       if (skill !== null && r.s !== skill) continue; // without a profession: search in every one
       if (known && !(spell in known)) continue;
@@ -344,7 +388,7 @@ export class CatalogPage {
       if (lvl < min || lvl > max) continue;
       const name = this.data.recipeName(spell);
       if (text && !name.toLowerCase().includes(text)) continue;
-      out.push({ spell, lvl, yellow: r.t?.[1] ?? 0, name, group: slotGroup(item) });
+      out.push({ spell, lvl, yellow: r.t?.[1] ?? 0, name, group: slotGroup(item), kind: typeGroup(item) });
     }
     return out;
   });
@@ -358,12 +402,23 @@ export class CatalogPage {
   });
   readonly slotShown = computed(() => (this.slotChoices().includes(this.slot()) ? this.slot() : ''));
 
+  // « Type »: only the types present among the recipes of the chosen slot; a choice that is not there any more
+  // counts as « Tous » (hidden when there is none: alchemy, cooking…)
+  readonly type = signal('');
+  readonly typeChoices = computed(() => {
+    const slot = this.slotShown();
+    const present = new Set(this.candidates().filter((x) => !slot || x.group === slot).map((x) => x.kind));
+    return TYPE_ORDER.filter((g) => present.has(g));
+  });
+  readonly typeShown = computed(() => (this.typeChoices().includes(this.type()) ? this.type() : ''));
+
   // Recipes shown: profession (or all when searching), artisan, filters; highest yellow threshold first (the
   // orange one is sometimes wrong in the data), then item level and name
   readonly list = computed(() => {
     const slot = this.slotShown();
+    const kind = this.typeShown();
     return this.candidates()
-      .filter((x) => !slot || x.group === slot)
+      .filter((x) => (!slot || x.group === slot) && (!kind || x.kind === kind))
       .sort((a, b) => b.yellow - a.yellow || b.lvl - a.lvl || a.name.localeCompare(b.name))
       .map((x) => x.spell);
   });
