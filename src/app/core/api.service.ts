@@ -18,6 +18,7 @@ import {
   AdminState,
   AdminTools,
   AdminVersions,
+  AddonImportRow,
   Artisan,
   Challenge,
   BankLine,
@@ -254,6 +255,17 @@ export class ApiService {
   }
   adminDirectoryAction(action: 'player' | 'remove' | 'link' | 'forget' | 'forget-many' | 'restore', body: unknown) {
     return this.post<{ result: unknown; directory: AdminDirectory }>(`/api/admin/directory/${action}`, body);
+  }
+
+  // 📤 the addon's file (slimmed in the browser): preview, or save with apply
+  addonImport(text: string, apply: boolean) {
+    return this.post<{ rows: AddonImportRow[]; saved?: number; waiting?: number }>('/api/me/addon-import', { text, apply });
+  }
+  adminAddonImport(userId: string, text: string, apply: boolean) {
+    return this.post<{ rows?: AddonImportRow[]; result?: { rows: AddonImportRow[]; saved: number; waiting: number }; directory?: AdminDirectory }>(
+      '/api/admin/directory/addon-import',
+      { userId, text, apply },
+    );
   }
 
   adminTools() {

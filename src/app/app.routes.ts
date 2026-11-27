@@ -22,6 +22,7 @@ export const routes: Routes = [
   // hidden: linked only for SITE_ADMINS accounts (top bar), and the bot only answers them
   // loaded on demand: only two accounts ever open them
   { path: 'admin', loadComponent: () => import('./pages/admin').then((m) => m.AdminPage), title: 'Tableau de bord · Bagarre club' },
+  { path: 'importer', loadComponent: () => import('./pages/import').then((m) => m.ImportPage), title: 'Importer mon addon · Bagarre club' },
   { path: 'feedback', loadComponent: () => import('./pages/feedback').then((m) => m.FeedbackPage), title: 'Retours · Bagarre club' },
   { path: '**', redirectTo: '' },
 ];

@@ -84,6 +84,19 @@ export interface Artisan {
 }
 
 // Wowhead tooltip, cached by the bot.
+// 📤 Import of the addon's file: one character found in it, and what the import does with it
+export interface AddonImportRow {
+  key: string;
+  name: string;
+  realm: string;
+  class: string | null;
+  level: number | null;
+  // mine: saved; link: an admin links it to the player and saves it; pending: waits for an admin;
+  // other: someone else's, ignored; trashed: in the trash bin, ignored
+  status: 'mine' | 'link' | 'pending' | 'other' | 'trashed';
+  professions: { name: string; level: number | null; max: number | null; recipes: number | null }[];
+}
+
 // A trainer, vendor or monster, from its Wowhead page (« 📍 Obtention »)
 export interface NpcInfo {
   name: string | null; // null: unknown to Wowhead (unknown true)
@@ -330,6 +343,8 @@ export interface AdminDirectory {
     waiting?: string | null;
     classKey?: string | null;
     level?: number | null;
+    // professions imported by a player (📤), waiting for an admin to link the character
+    imported?: { by: string; byName: string; at: number; professions: string };
   }[];
   members: AdminMemberHit[] | null; // every human of the server, null without the members intent
   forgotten: { key: string; name: string; realm: string; at: number; by: string | null }[];

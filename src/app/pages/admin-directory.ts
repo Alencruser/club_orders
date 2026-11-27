@@ -1,3 +1,4 @@
+import { AddonImportComponent } from '../shared/addon-import';
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -12,7 +13,7 @@ const IDLE_DAYS = 30; // 💤 after this long without anything received
 
 @Component({
   selector: 'app-admin-directory',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, AddonImportComponent],
   // only loaded with /admin (lazy chunk), not in the global stylesheet
   styles: `
 .admin-search {
@@ -293,6 +294,7 @@ const IDLE_DAYS = 30; // 💤 after this long without anything received
                   @if (u.bank) { · {{ u.bank }} ligne(s) de banque }
                   @if (u.follow) { · {{ u.follow }} suivi(s) }
                   @if (u.waiting) { · attend le battletag {{ u.waiting }} (personne ne l'a dans l'annuaire) }
+                  @if (u.imported; as im) { · 📤 métiers importés par <b>{{ im.byName }}</b> ({{ im.professions }}) : relie-le pour les ajouter au Grimoire }
                   · {{ ago(u.last || null) }}</span></span
                 >
                 <select [(ngModel)]="linkTo[u.key]">
@@ -325,6 +327,24 @@ const IDLE_DAYS = 30; // 💤 after this long without anything received
               <li class="muted small">Tous les persos ont leur joueur 🎉</li>
             }
           </ul>
+        </section>
+
+        <section class="tooltip admin-card">
+          <h2>📤 Importer le fichier d'addon d'un joueur</h2>
+          <p class="muted small">
+            Pour un joueur sans compagnon : il t'envoie son fichier WallOfShameForever.lua (dossier
+            WTF\Account\…\SavedVariables), tu choisis le joueur puis le fichier. Ses persos lui sont reliés et leurs métiers
+            entrent dans le Grimoire. Il peut aussi le faire lui-même sur la page /importer.
+          </p>
+          <select [(ngModel)]="importFor">
+            <option [ngValue]="null">Joueur…</option>
+            @for (p of d.players; track p.userId) {
+              <option [ngValue]="p.userId">{{ p.name }}</option>
+            }
+          </select>
+          @if (importFor) {
+            <app-addon-import [forUser]="importFor" (saved)="load()" />
+          }
         </section>
 
         <section class="tooltip admin-card">
@@ -369,6 +389,7 @@ export class AdminDirectoryComponent {
   memberQuery = '';
   cascade = false;
   linkTo: Record<string, string | undefined> = {};
+  importFor: string | null = null;
 
   get search() {
     return this.query();
@@ -466,6 +487,8 @@ export class AdminDirectoryComponent {
   async load() {
     try {
       this.dir.set(await this.api.adminDirectory());
+      // persos aux métiers importés : celui qui les a importés est proposé d'office
+      for (const u of this.dir()?.unlinked ?? []) if (u.imported) this.linkTo[u.key] ??= u.imported.by;
       this.error.set(null);
     } catch (err) {
       this.error.set(errorText(err));

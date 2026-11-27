@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ApiService, errorText } from '../core/api.service';
 import { DataService } from '../core/data.service';
 import { Order } from '../core/models';
@@ -15,7 +16,7 @@ import { AchievementsSummary } from '../core/models';
 // in total; my artisan note; the orders already handled.
 @Component({
   selector: 'app-artisan',
-  imports: [FormsModule, OrderRowComponent, MaterialsComponent, AvatarComponent],
+  imports: [FormsModule, RouterLink, OrderRowComponent, MaterialsComponent, AvatarComponent],
   template: `
     <div class="page-head">
       <h1 class="page-banner"><img src="/titles/atelier.webp" alt="Mon atelier" /></h1>
@@ -85,6 +86,10 @@ import { AchievementsSummary } from '../core/models';
       </label>
       <button class="btn gold" [disabled]="savingNote()">Enregistrer</button>
     </form>
+    <p class="muted small">
+      Pas de compagnon ? <a routerLink="/importer">📤 Importe ton fichier d’addon</a> pour que tes recettes apparaissent
+      dans le Grimoire.
+    </p>
 
     @if (orders.error(); as error) {
       <p class="refused">{{ error }}</p>
