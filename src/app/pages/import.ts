@@ -46,7 +46,7 @@ import { AddonImportComponent } from '../shared/addon-import';
             </li>
             <li>
               Pour aller plus vite : colle
-              <code>C:\Program Files (x86)\World of Warcraft\_forever_\WTF\Account</code> dans la barre d’adresse de
+              <code>C:\\Program Files (x86)\\World of Warcraft\\_forever_\\WTF\\Account</code> dans la barre d’adresse de
               l’explorateur Windows, Entrée, puis ouvre ton dossier de compte et SavedVariables.
             </li>
             <li>
