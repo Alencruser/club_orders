@@ -333,7 +333,7 @@ export class CatalogPage {
     const crafters = this.data.crafters();
     const min = Number(this.minLevel()) || 0;
     const max = Number(this.maxLevel()) || 99;
-    const out: { spell: string; lvl: number; name: string; group: string }[] = [];
+    const out: { spell: string; lvl: number; yellow: number; name: string; group: string }[] = [];
     for (const [spell, r] of Object.entries(catalog.recipes)) {
       if (skill !== null && r.s !== skill) continue; // without a profession: search in every one
       if (known && !(spell in known)) continue;
@@ -344,7 +344,7 @@ export class CatalogPage {
       if (lvl < min || lvl > max) continue;
       const name = this.data.recipeName(spell);
       if (text && !name.toLowerCase().includes(text)) continue;
-      out.push({ spell, lvl, name, group: slotGroup(item) });
+      out.push({ spell, lvl, yellow: r.t?.[1] ?? 0, name, group: slotGroup(item) });
     }
     return out;
   });
@@ -358,12 +358,13 @@ export class CatalogPage {
   });
   readonly slotShown = computed(() => (this.slotChoices().includes(this.slot()) ? this.slot() : ''));
 
-  // Recipes shown: profession (or all when searching), artisan, filters; highest item level first
+  // Recipes shown: profession (or all when searching), artisan, filters; highest yellow threshold first (the
+  // orange one is sometimes wrong in the data), then item level and name
   readonly list = computed(() => {
     const slot = this.slotShown();
     return this.candidates()
       .filter((x) => !slot || x.group === slot)
-      .sort((a, b) => b.lvl - a.lvl || a.name.localeCompare(b.name))
+      .sort((a, b) => b.yellow - a.yellow || b.lvl - a.lvl || a.name.localeCompare(b.name))
       .map((x) => x.spell);
   });
 
