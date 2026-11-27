@@ -124,54 +124,77 @@ function ago(at: number | null) {
       width: 220px;
       max-width: 100%;
     }
-    .arm-table-wrap {
-      overflow-x: auto;
+    .arm-cards {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      margin-top: 1rem;
     }
-    table.arm-list {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0 6px;
-      min-width: 760px;
+    .arm-card {
+      gap: 0.6rem;
     }
-    .arm-list th {
-      font-size: 0.78rem;
+    .arm-card.known {
+      cursor: pointer;
+    }
+    .arm-card.known:focus-visible {
+      outline: 3px solid #f7d38a;
+      outline-offset: 2px;
+    }
+    .arm-card.unknown {
+      opacity: 0.55;
+    }
+    .arm-crest {
+      width: 44px;
+      height: 44px;
+      border: 2px solid #1a0b06;
+      border-radius: 8px;
+      box-shadow: 0 0 0 2px rgba(240, 196, 110, 0.5);
+    }
+    .arm-card h3 {
+      font-family: 'Sansita', Georgia, serif !important;
+      font-size: 1.25rem !important;
+      text-shadow: 1px 1px 0 #1a0b06;
+    }
+    .arm-level {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1;
+      font-family: 'Sansita', Georgia, serif;
+      font-weight: 800;
+      font-size: 1.7rem;
+      color: #f7d38a;
+      -webkit-text-stroke: 4px #1a0b06;
+      paint-order: stroke fill;
+    }
+    .arm-level small {
+      font-size: 0.7rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--gold);
-      text-align: left;
-      padding: 0 12px;
-      font-weight: 700;
+      -webkit-text-stroke: 0;
+      font-family: 'Alegreya Sans', system-ui, sans-serif;
     }
-    .arm-list .num {
-      text-align: right;
-      font-variant-numeric: tabular-nums;
+    .arm-facts {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 2px 12px;
+      margin: 0;
+      font-size: 0.92rem;
     }
-    .arm-row td {
-      background: rgba(26, 11, 6, 0.55);
-      padding: 8px 12px;
-      border-block: 2px solid rgba(240, 196, 110, 0.18);
+    .arm-facts dt {
+      color: var(--gold);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      align-self: center;
     }
-    .arm-row td:first-child {
-      border-left: 2px solid rgba(240, 196, 110, 0.18);
-      border-radius: 14px 0 0 14px;
+    .arm-facts dd {
+      margin: 0;
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
-    .arm-row td:last-child {
-      border-right: 2px solid rgba(240, 196, 110, 0.18);
-      border-radius: 0 14px 14px 0;
-    }
-    .arm-row.known {
-      cursor: pointer;
-    }
-    .arm-row.known:hover td,
-    .arm-row.known:focus-visible td {
-      background: rgba(201, 54, 29, 0.35);
-      border-color: rgba(240, 196, 110, 0.55);
-    }
-    .arm-row:focus-visible {
-      outline: none;
-    }
-    .arm-row.unknown {
-      opacity: 0.55;
+    .arm-seen {
+      margin: 0;
+      color: #d8b98a;
     }
     .who {
       display: flex;
@@ -672,68 +695,55 @@ function ago(at: number | null) {
             Mes persos
           </button>
         </div>
-        <div class="arm-table-wrap">
-          <table class="arm-list">
-            <thead>
-              <tr>
-                <th>Perso</th>
-                <th class="num">Niveau</th>
-                <th>Classe</th>
-                <th>Spé</th>
-                <th class="num">iLvl moyen</th>
-                <th>Membre</th>
-                <th>Équipement vu</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (c of shown(); track c.key) {
-                <tr
-                  class="arm-row"
-                  [class.known]="c.updatedAt"
-                  [class.unknown]="!c.updatedAt"
-                  [attr.tabindex]="c.updatedAt ? 0 : null"
-                  (click)="c.updatedAt && open(c.key)"
-                  (keydown.enter)="c.updatedAt && open(c.key)"
-                >
-                  <td>
-                    <span class="who"
-                      ><img [src]="classIcon(c.class)" alt="" /><b [style.color]="color(c.class)">{{
-                        c.name
-                      }}</b></span
-                    >
-                  </td>
-                  <td class="num lvl">{{ c.level ?? '?' }}</td>
-                  <td>{{ className(c.class) }}</td>
-                  <td class="soft">
-                    @if (c.spec; as s) {
-                      {{ s.name }} <span>({{ s.split }})</span>
-                    } @else {
-                      —
-                    }
-                  </td>
-                  <td class="num">{{ c.ilvl !== null ? fmt(c.ilvl, 1) : '—' }}</td>
-                  <td>
-                    {{ c.member ?? '—' }}
-                    @if (c.userId && c.userId === l.me) {
-                      <span class="me">moi</span>
-                    }
-                  </td>
-                  <td class="soft small">
-                    {{
-                      c.updatedAt ? ago(c.updatedAt) : 'Équipement inconnu (addon pas encore lancé)'
-                    }}
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="7" class="muted">Aucun perso ne correspond.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
         <p class="muted small">{{ shown().length }} perso{{ shown().length > 1 ? 's' : '' }}</p>
       </section>
+
+      <div class="cards arm-cards">
+        @for (c of shown(); track c.key) {
+          <article
+            class="tooltip card arm-card"
+            [class.known]="c.updatedAt"
+            [class.unknown]="!c.updatedAt"
+            [attr.tabindex]="c.updatedAt ? 0 : null"
+            [attr.role]="c.updatedAt ? 'button' : null"
+            (click)="c.updatedAt && open(c.key)"
+            (keydown.enter)="c.updatedAt && open(c.key)"
+          >
+            <div class="card-head">
+              <img class="arm-crest" [src]="classIcon(c.class)" alt="" />
+              <div class="card-title">
+                <h3 [style.color]="color(c.class)">{{ c.name }}</h3>
+                <p class="soft small">{{ c.race ? c.race + ' · ' : '' }}{{ className(c.class) }}</p>
+              </div>
+              <span class="arm-level" title="Niveau"><small>niv.</small>{{ c.level ?? '?' }}</span>
+            </div>
+            <dl class="arm-facts">
+              <dt>Spé</dt>
+              <dd>
+                @if (c.spec; as s) {
+                  {{ s.name }} <span class="soft">({{ s.split }})</span>
+                } @else {
+                  —
+                }
+              </dd>
+              <dt>iLvl moyen</dt>
+              <dd>{{ c.ilvl !== null ? fmt(c.ilvl, 1) : '—' }}</dd>
+              <dt>Membre</dt>
+              <dd>
+                {{ c.member ?? '—' }}
+                @if (c.userId && c.userId === l.me) {
+                  <span class="me">moi</span>
+                }
+              </dd>
+            </dl>
+            <p class="arm-seen small">
+              {{ c.updatedAt ? 'Équipement vu ' + ago(c.updatedAt) : 'Équipement inconnu (addon pas encore lancé)' }}
+            </p>
+          </article>
+        } @empty {
+          <p class="muted">Aucun perso ne correspond.</p>
+        }
+      </div>
     } @else if (!error()) {
       <p class="center muted">Chargement…</p>
     }

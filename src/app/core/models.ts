@@ -801,6 +801,7 @@ export interface ArmoryRow {
   level: number | null;
   userId: string | null;
   member: string | null;
+  race: string | null;
   ilvl: number | null;
   spec: { name: string; split: string } | null;
   updatedAt: number | null; // s; null: the addon never sent this character's gear
@@ -839,7 +840,6 @@ export interface ArmoryItem {
 }
 
 export interface ArmoryDetail extends ArmoryRow {
-  race: string | null;
   gear: ArmoryGear[];
   stats: Record<string, number>;
   // links: the game's lines between talents ([tier, column] to [tier, column]), WoW Forever only
