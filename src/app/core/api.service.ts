@@ -21,6 +21,8 @@ import {
   AdminTools,
   AdminVersions,
   AddonImportRow,
+  ArmoryDetail,
+  ArmoryList,
   Artisan,
   Challenge,
   BankLine,
@@ -326,6 +328,14 @@ export class ApiService {
 
   follow() {
     return this.get<FollowSummary>('/api/follow');
+  }
+
+  armory() {
+    return this.get<ArmoryList>('/api/armory');
+  }
+
+  armoryCharacter(key: string) {
+    return this.get<ArmoryDetail>(`/api/armory/${encodeURIComponent(key)}`);
   }
 
   home() {

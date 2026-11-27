@@ -792,3 +792,59 @@ export interface AdminChannel {
   parent: string | null;
   botCanWrite: boolean;
 }
+
+// --- Armurerie (GET /api/armory, /api/armory/<key>): gear, stats and talents sent by the addon ---
+export interface ArmoryRow {
+  key: string;
+  name: string;
+  class: string | null;
+  level: number | null;
+  userId: string | null;
+  member: string | null;
+  ilvl: number | null;
+  spec: { name: string; split: string } | null;
+  updatedAt: number | null; // s; null: the addon never sent this character's gear
+}
+
+export interface ArmoryList {
+  characters: ArmoryRow[];
+  me: string;
+}
+
+export interface ArmoryGear {
+  slot: number; // 1 head … 19 tabard (game inventory slots)
+  item: number;
+  enchant: number;
+  suffix: number;
+  ilvl: number;
+  quality: number | null;
+}
+
+export interface ArmoryTalent {
+  spell: number | null;
+  tier: number;
+  column: number;
+  rank: number;
+  max: number;
+  name: string;
+}
+
+export interface ArmoryItem {
+  name: string;
+  quality: number | null;
+  icon: string;
+  ilvl: number | null;
+  enchant: string | null;
+  lines: { left: TextPiece[]; right: TextPiece[] }[];
+}
+
+export interface ArmoryDetail extends ArmoryRow {
+  race: string | null;
+  gear: ArmoryGear[];
+  stats: Record<string, number>;
+  talents: { name: string; points: number; talents: ArmoryTalent[] }[];
+  items: Record<string, ArmoryItem>; // by "item:enchant:suffix"
+  spells: Record<string, { icon: string; lines: { left: TextPiece[]; right: TextPiece[] }[] }>;
+  craftable: Record<string, { profession: string | null; artisans: string[] }>;
+  missing: string[]; // tooltips Wowhead has not given yet: ask again a moment later
+}

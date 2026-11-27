@@ -38,6 +38,9 @@ const LOGIN_ERRORS: Record<string, string> = {
           <a routerLink="/hauts-faits" routerLinkActive="active" title="Hauts faits">
             <img src="/nav/hauts-faits.webp" alt="Hauts faits" />
           </a>
+          <a routerLink="/armurerie" routerLinkActive="active" title="Armurerie">
+            <img src="/nav/armurerie.webp" alt="Armurerie" />
+          </a>
           <a routerLink="/atelier" routerLinkActive="active" title="Mon atelier">
             <img src="/nav/atelier.webp" alt="Atelier" />
             @if (orders.receivedPending().length) {

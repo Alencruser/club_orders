@@ -19,6 +19,12 @@ export const routes: Routes = [
   { path: 'suivi', component: FollowPage, title: 'Suivi · Bagarre club' },
   { path: 'hauts-faits', component: TrophiesPage, title: 'Hauts faits · Bagarre club' },
   { path: 'defis', component: ChallengesPage, title: 'Défis · Bagarre club' },
+  // loaded on demand: icons, stats and talents would weigh on the first page otherwise
+  {
+    path: 'armurerie',
+    loadComponent: () => import('./pages/armory').then((m) => m.ArmoryPage),
+    title: 'Armurerie · Bagarre club',
+  },
   // hidden: linked only for SITE_ADMINS accounts (top bar), and the bot only answers them
   // loaded on demand: only two accounts ever open them
   { path: 'admin', loadComponent: () => import('./pages/admin').then((m) => m.AdminPage), title: 'Tableau de bord · Bagarre club' },
