@@ -20,7 +20,9 @@ const PROF_ICONS: Record<number, string> = {
   186: 'trade_mining',
   182: 'spell_nature_naturetouchgrow',
   393: 'inv_misc_pelt_wolf_01',
+  633: 'spell_nature_moonkey', // lockpicking (rogues)
 };
+const LOCKPICKING = 633;
 const PAGE = 24;
 
 // The book: profession → artisan → recipe cards. The choice is in the address (?metier=165&artisan=…),
@@ -173,7 +175,29 @@ const PAGE = 24;
           </div>
         }
 
-        @if (gathering()) {
+        @if (lockpicking()) {
+          <section class="tooltip lockpicking">
+            <h2>Crochetage des voleurs</h2>
+            <p class="muted small">
+              Un coffret verrouillé à ouvrir ? Demande à un voleur dont le crochetage est assez haut : tu mets le
+              coffret dans la fenêtre d’échange, case « Ne sera pas échangé », et il le crochète sans le prendre.
+            </p>
+            <ol class="lp-list">
+              @for (r of rogues(); track r.key) {
+                <li>
+                  <span class="lp-name" [style.color]="classColor(r.class)">{{ r.name }}</span>
+                  <span class="lp-bar"><span [style.width.%]="r.share"></span></span>
+                  <b>{{ r.level }}</b><span class="muted">/{{ r.max }}</span>
+                  <span class="muted small lp-when">{{ r.updated }}</span>
+                </li>
+              } @empty {
+                <li class="muted">
+                  Aucun voleur relevé pour l’instant : l’addon (v0.7.2 ou plus) envoie le crochetage à la connexion.
+                </li>
+              }
+            </ol>
+          </section>
+        } @else if (gathering()) {
           <p class="muted">
             Métier de récolte : pas de recettes. Les artisans ci-dessus peuvent récolter pour toi,
             demande-leur directement.
@@ -230,6 +254,26 @@ export class CatalogPage {
       !this.search().trim()
     );
   });
+
+  // Crochetage (voleurs) : pas de recettes, le classement des voleurs à la place
+  readonly lockpicking = computed(() => this.profession() === LOCKPICKING && !this.search().trim());
+  readonly rogues = computed(() =>
+    this.artisansOf(LOCKPICKING).map((a) => {
+      const p = a.professions[LOCKPICKING];
+      const level = p.level ?? 0;
+      const max = p.max || 300;
+      const days = a.updatedAt ? Math.floor((Date.now() / 1000 - a.updatedAt) / 86400) : null;
+      return {
+        key: a.key,
+        name: a.name,
+        class: a.class,
+        level,
+        max,
+        share: Math.min(100, (100 * level) / 300),
+        updated: days === null ? '' : days < 1 ? 'aujourd’hui' : `il y a ${days} j`,
+      };
+    }),
+  );
 
   readonly selectedNote = computed(
     () => this.data.artisans().find((a) => a.key === this.artisan())?.note ?? null,
