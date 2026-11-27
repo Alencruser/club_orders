@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ViewContainerRef, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -260,6 +260,9 @@ function ago(at: number | null) {
       border: 2px solid rgba(240, 196, 110, 0.15);
       border-radius: 12px;
       padding: 5px 8px;
+    }
+    .slot.filled {
+      cursor: pointer;
     }
     .slot.filled:hover,
     .slot.filled:focus-visible {
@@ -579,6 +582,11 @@ function ago(at: number | null) {
       margin-top: 6px;
       color: #ffd100;
       font-style: italic;
+    }
+    .wtip .hint {
+      margin-top: 6px;
+      color: #9d9d9d;
+      font-size: 12px;
     }
     .wtip .rank {
       color: #ffd100;
@@ -909,6 +917,9 @@ function ago(at: number | null) {
         <div
           class="slot filled"
           tabindex="0"
+          role="button"
+          (click)="openObtain(g)"
+          (keydown.enter)="openObtain(g)"
           (mouseenter)="tipItem($event, g)"
           (focus)="tipItem($event, g)"
           (mouseleave)="tip.set(null)"
@@ -969,6 +980,8 @@ export class ArmoryPage {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private vcr = inject(ViewContainerRef);
+  private obtainOpen = false;
 
   readonly list = signal<ArmoryList | null>(null);
   readonly error = signal<string | null>(null);
@@ -1048,7 +1061,7 @@ export class ArmoryPage {
       if (!key && this.openKey()) this.reset();
     });
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && this.openKey()) this.close();
+      if (e.key === 'Escape' && this.openKey() && !this.obtainOpen) this.close(); // Escape closes the Obtention first
     };
     document.addEventListener('keydown', onKey);
     inject(DestroyRef).onDestroy(() => {
@@ -1136,6 +1149,25 @@ export class ArmoryPage {
     return icon(t.spell ? this.detail()?.spells[t.spell]?.icon : null, 'medium');
   }
 
+  // « 📍 Obtention » of the item (same window as the Grimoire's, loaded on the first click): drops, vendors,
+  // quests, and the guild's artisans who can make it
+  async openObtain(g: ArmoryGear) {
+    this.tip.set(null);
+    const { ObtainDialogComponent } = await import('../shared/obtain-dialog');
+    const craft = this.detail()?.craftable[g.item];
+    const ref = this.vcr.createComponent(ObtainDialogComponent);
+    ref.setInput('item', {
+      id: g.item,
+      name: this.item(g)?.name ?? `Objet ${g.item}`,
+      craft: craft?.artisans.length ? craft : null,
+    });
+    this.obtainOpen = true;
+    ref.instance.closed.subscribe(() => {
+      ref.destroy();
+      setTimeout(() => (this.obtainOpen = false)); // after this Escape has reached every listener
+    });
+  }
+
   // Talents on the game's grid: 4 columns, a row per tier (empty cells: null)
   grid(talents: ArmoryTalent[]) {
     const rows = Math.max(1, ...talents.map((t) => t.tier));
@@ -1221,6 +1253,7 @@ export class ArmoryPage {
         'crafted',
       ]);
     }
+    extra.push(['Clic : 📍 Obtention', 'hint']);
     this.place(e, lines, extra);
   }
   tipTalent(e: Event, t: ArmoryTalent) {

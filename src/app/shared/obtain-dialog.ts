@@ -1,4 +1,5 @@
 import { Component, computed, effect, HostListener, inject, input, OnDestroy, output, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { ApiService } from '../core/api.service';
 import { DataService, money } from '../core/data.service';
 import { NpcInfo, PatternSources } from '../core/models';
@@ -174,7 +175,7 @@ interface Mob {
     <div class="overlay" (click)="closed.emit()">
       <section class="tooltip dialog ob" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
         <div class="ob-head">
-          <h2>📍 Obtention · {{ data.recipeName(spell()) }}</h2>
+          <h2>📍 Obtention · {{ item()?.name ?? data.recipeName(spell() ?? '') }}</h2>
           <button type="button" class="btn ghost" (click)="closed.emit()" aria-label="Fermer">✕</button>
         </div>
 
@@ -188,14 +189,20 @@ interface Mob {
           </div>
         }
 
-        @if (recipe(); as r) {
-          @if (r.scroll; as sc) {
+        @if (recipe() || item()) {
+          @if (item()?.craft; as cr) {
+            <p>
+              🔨 Fabricable dans la guilde : {{ cr.profession ?? 'métier' }} ({{ cr.artisans.join(', ') }})
+              · <a href="/grimoire" (click)="goGrimoire($event)">voir la recette au Grimoire</a>
+            </p>
+          }
+          @if (recipe()?.scroll; as sc) {
             <p>
               📜 Patron
               <a [href]="wowhead + '/item=' + sc[0]" target="_blank" rel="noopener">« {{ data.itemName(sc[0]) }} » ↗</a>
               · métier {{ sc[1] }}
             </p>
-          } @else if (r.fee; as fee) {
+          } @else if (recipe()?.fee; as fee) {
             <p>🎓 Appris chez un formateur · métier {{ fee[1] }} · {{ money(fee[0]) }}</p>
           }
           @if (fdb()?.r; as rep) {
@@ -318,19 +325,24 @@ interface Mob {
             <p class="small">🎲 Tombe aussi en butin aléatoire sur les monstres de niveau proche.</p>
           }
 
-          @if (otherKinds().length && r.scroll) {
+          @if (otherKinds().length && scrollId()) {
             <p class="small">
               🔎 {{ mobs().length || vendors().length || quests().length || trainers().length || worldDrop() ? 'Aussi' : 'Source' }} :
               {{ otherKinds().join(', ') }}, sans plus de détail ;
-              <a [href]="wowhead + '/item=' + r.scroll[0]" target="_blank" rel="noopener">voir la fiche du patron ↗</a>
+              <a [href]="wowhead + '/item=' + scrollId()" target="_blank" rel="noopener"
+                >{{ item() ? 'voir la fiche de l’objet' : 'voir la fiche du patron' }} ↗</a
+              >
             </p>
           }
 
           @if (nothing()) {
             <p class="muted">
-              @if (r.scroll) {
+              @if (item()) {
+                Personne ne sait encore où trouver cet objet :
+                <a [href]="wowhead + '/item=' + scrollId()" target="_blank" rel="noopener">voir sa fiche Wowhead ↗</a>
+              } @else if (recipe()?.scroll) {
                 Personne ne sait encore où trouver ce patron :
-                <a [href]="wowhead + '/item=' + r.scroll[0]" target="_blank" rel="noopener">voir sa fiche Wowhead ↗</a>
+                <a [href]="wowhead + '/item=' + scrollId()" target="_blank" rel="noopener">voir sa fiche Wowhead ↗</a>
               } @else {
                 Source inconnue :
                 <a [href]="wowhead + '/spell=' + spell()" target="_blank" rel="noopener">voir la recette sur Wowhead ↗</a>
@@ -354,8 +366,11 @@ export class ObtainDialogComponent implements OnDestroy {
   protected readonly wowhead = WOWHEAD;
   protected readonly money = money;
 
-  readonly spell = input.required<string>();
+  // a recipe (Grimoire: where to get its pattern), or an item worn (Armurerie: where to get the item)
+  readonly spell = input<string | null>(null);
+  readonly item = input<{ id: number; name: string; craft: { profession: string | null; artisans: string[] } | null } | null>(null);
   readonly closed = output<void>();
+  private router = inject(Router);
 
   readonly allTrainers = signal(false);
   readonly allVendors = signal(false);
@@ -365,8 +380,12 @@ export class ObtainDialogComponent implements OnDestroy {
   readonly patternLoading = signal(false);
   private alive = true;
 
-  readonly recipe = computed(() => this.data.recipe(this.spell()));
-  private readonly scrollId = computed(() => this.recipe()?.scroll?.[0] ?? null);
+  readonly recipe = computed(() => {
+    const spell = this.spell();
+    return spell ? this.data.recipe(spell) : null;
+  });
+  // the item whose sources are shown: the item worn, else the recipe's pattern
+  readonly scrollId = computed(() => this.item()?.id ?? this.recipe()?.scroll?.[0] ?? null);
 
   // everything known about the pattern (null: not received yet, or no pattern)
   private readonly sources = computed(() => {
@@ -575,6 +594,14 @@ export class ObtainDialogComponent implements OnDestroy {
     if (!this.alive) return;
     if (!missing || round >= 10) return this.patternLoading.set(false);
     setTimeout(() => this.fetchPattern(id, round + 1), 2500);
+  }
+
+  // the item's recipe in the Grimoire (searched by the item's name)
+  goGrimoire(e: Event) {
+    e.preventDefault();
+    const name = this.item()?.name;
+    this.closed.emit();
+    this.router.navigate(['/grimoire'], { queryParams: { recherche: name } });
   }
 
   place(n: NpcInfo | null, zone: string | null = null) {

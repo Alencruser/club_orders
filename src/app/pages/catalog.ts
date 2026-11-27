@@ -373,6 +373,9 @@ export class CatalogPage {
       const skill = Number(q.get('metier'));
       this.profession.set(Number.isInteger(skill) && skill > 0 ? skill : null);
       this.artisan.set(q.get('artisan'));
+      // ?recherche=: a recipe searched from elsewhere (Armurerie: « voir la recette au Grimoire »)
+      const text = q.get('recherche');
+      if (text) this.search.set(text);
       this.shown.set(PAGE);
     });
     effect(() => {
