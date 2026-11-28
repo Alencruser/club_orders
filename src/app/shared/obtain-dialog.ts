@@ -22,7 +22,7 @@ function persist<T>(key: string, map: Map<string, T>, max: number) {
   writeStore(key, Object.fromEntries(map));
 }
 // kinds of source Wowhead gives without naming anyone
-const KINDS: Record<number, string> = { 2: 'butin', 4: 'récompense de quête', 5: 'vendu par un marchand', 7: 'découverte', 16: 'pêche', 21: 'butin' };
+const KINDS: Record<number, string> = { 1: 'fabriqué par un artisan', 2: 'butin', 4: 'récompense de quête', 5: 'vendu par un marchand', 7: 'découverte', 16: 'pêche', 21: 'butin' };
 const RANKS: Record<number, string> = { 4: 'Neutre', 5: 'Amical', 6: 'Honoré', 7: 'Révéré', 8: 'Exalté' };
 
 type WhQuest = { quest: number; name: string; zone: string | null };
@@ -192,7 +192,15 @@ interface Mob {
         @if (recipe() || item()) {
           @if (item()?.craft; as cr) {
             <p>
-              🔨 Fabricable dans la guilde : {{ cr.profession ?? 'métier' }} ({{ cr.artisans.join(', ') }})
+              🔨 Fabriqué en <b>{{ cr.profession ?? 'métier' }}</b>
+              @if (cr.level) {
+                (niveau {{ cr.level }})
+              }
+              @if (cr.artisans.length) {
+                · dans la guilde : {{ cr.artisans.join(', ') }}
+              } @else {
+                · aucun artisan de la guilde relevé
+              }
               · <a href="/grimoire" (click)="goGrimoire($event)">voir la recette au Grimoire</a>
             </p>
           }
@@ -327,7 +335,7 @@ interface Mob {
 
           @if (otherKinds().length && scrollId()) {
             <p class="small">
-              🔎 {{ mobs().length || vendors().length || quests().length || trainers().length || worldDrop() ? 'Aussi' : 'Source' }} :
+              🔎 {{ item()?.craft || mobs().length || vendors().length || quests().length || trainers().length || worldDrop() ? 'Aussi' : 'Source' }} :
               {{ otherKinds().join(', ') }}, sans plus de détail ;
               <a [href]="wowhead + '/item=' + scrollId()" target="_blank" rel="noopener"
                 >{{ item() ? 'voir la fiche de l’objet' : 'voir la fiche du patron' }} ↗</a
@@ -368,7 +376,11 @@ export class ObtainDialogComponent implements OnDestroy {
 
   // a recipe (Grimoire: where to get its pattern), or an item worn (Armurerie: where to get the item)
   readonly spell = input<string | null>(null);
-  readonly item = input<{ id: number; name: string; craft: { profession: string | null; artisans: string[] } | null } | null>(null);
+  readonly item = input<{
+    id: number;
+    name: string;
+    craft: { profession: string | null; level?: number | null; artisans: string[] } | null;
+  } | null>(null);
   readonly closed = output<void>();
   private router = inject(Router);
 
@@ -488,6 +500,7 @@ export class ObtainDialogComponent implements OnDestroy {
     if (this.vendors().length) shown.add(KINDS[5]);
     if (this.quests().length) shown.add(KINDS[4]);
     if (this.mobs().length || this.worldDrop()) shown.add(KINDS[2]);
+    if (this.item()?.craft) shown.add(KINDS[1]);
     return [...new Set(s.map((k) => KINDS[k]).filter((k) => k && !shown.has(k)))];
   });
   readonly nothing = computed(
@@ -498,6 +511,7 @@ export class ObtainDialogComponent implements OnDestroy {
       !this.worldDrop() &&
       !this.quests().length &&
       !this.otherKinds().length &&
+      !this.item()?.craft &&
       !this.patternLoading() &&
       !(this.recipe()?.fee && !this.recipe()?.scroll),
   );

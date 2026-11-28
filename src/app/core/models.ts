@@ -846,6 +846,6 @@ export interface ArmoryDetail extends ArmoryRow {
   talents: { name: string; points: number; talents: ArmoryTalent[]; links?: { from: [number, number]; to: [number, number] }[] }[];
   items: Record<string, ArmoryItem>; // by "item:enchant:suffix"
   spells: Record<string, { icon: string; lines: { left: TextPiece[]; right: TextPiece[] }[] }>;
-  craftable: Record<string, { profession: string | null; artisans: string[] }>;
+  craftable: Record<string, { profession: string | null; level?: number | null; artisans: string[] }>;
   missing: string[]; // tooltips Wowhead has not given yet: ask again a moment later
 }

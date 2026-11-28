@@ -1169,7 +1169,7 @@ export class ArmoryPage {
     ref.setInput('item', {
       id: g.item,
       name: this.item(g)?.name ?? `Objet ${g.item}`,
-      craft: craft?.artisans.length ? craft : null,
+      craft: craft ?? null,
     });
     this.obtainOpen = true;
     ref.instance.closed.subscribe(() => {
