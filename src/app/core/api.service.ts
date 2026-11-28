@@ -243,6 +243,9 @@ export class ApiService {
   adminScoreRoles(body: { enabled?: boolean; tiers?: { key: string; min: number; roleId: string | null }[] }) {
     return this.post<{ sync: ScoreRolesSync }>('/api/admin/score/roles', body);
   }
+  adminScoreRolesCreate() {
+    return this.post<{ created: string[]; linked: string[] }>('/api/admin/score/roles/create', {});
+  }
   adminScoreRolesSync() {
     return this.post<{ sync: ScoreRolesSync }>('/api/admin/score/roles/sync', {});
   }

@@ -302,6 +302,7 @@ const CAT_NAMES: Record<string, string> = { items: 'objets', gold: 'or', crafts:
             </tbody>
           </table>
           <div class="admin-actions">
+            <button type="button" class="btn ghost" [disabled]="busy()" (click)="createRoles()">✨ Créer les rôles manquants</button>
             <button type="button" class="btn gold" [disabled]="busy()" (click)="saveRoles()">💾 Enregistrer les rôles</button>
             <button type="button" class="btn ghost" [disabled]="busy() || !d.roles.enabled" (click)="syncRoles()">🔄 Reposer maintenant</button>
           </div>
@@ -444,6 +445,20 @@ export class AdminScoreComponent {
     if (!r) return;
     const tiers = r.tiers.map(({ key, min, roleId }) => ({ key, min, roleId }));
     await this.rolesCall(() => this.api.adminScoreRoles({ enabled: r.enabled, tiers }), '💾 Rôles enregistrés');
+  }
+  // the bot creates the tiers' missing roles (no permission) and links them; « Rôles actifs » stays as it is
+  async createRoles() {
+    this.busy.set(true);
+    try {
+      const made = await this.api.adminScoreRolesCreate();
+      const parts = [made.created.length ? `créés : ${made.created.join(', ')}` : '', made.linked.length ? `reliés : ${made.linked.join(', ')}` : ''].filter(Boolean);
+      this.toast.ok(parts.length ? `✨ Rôles ${parts.join(' · ')}` : '✨ Tous les paliers ont déjà leur rôle.');
+    } catch (err) {
+      this.toast.error(`❌ ${errorText(err)}`);
+    } finally {
+      this.busy.set(false);
+    }
+    await this.load();
   }
   async syncRoles() {
     await this.rolesCall(() => this.api.adminScoreRolesSync(), '🔄 Rôles reposés');
