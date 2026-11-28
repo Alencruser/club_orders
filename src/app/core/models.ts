@@ -409,6 +409,8 @@ export interface AdminBank {
   goal: { copper: number; name: string; since: number | null };
   money: number | null;
   history: { copper: number; name: string; since: number | null; until: number; reachedAt: number | null }[];
+  // goals reached, latest first; key: the share card « thanks:<key> »; donors: members who gave during it
+  reached?: { key: string; name: string; copper: number; since: number | null; reachedAt: number; donors: number; total: number }[];
   neverGave: { days: number | null; excluded: string[] };
   list: { userId: string; name: string }[]; // who is in « Jamais donné » with these settings
   players: { userId: string; name: string }[]; // directory members, to leave some out

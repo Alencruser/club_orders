@@ -28,8 +28,13 @@ import { ToastService } from '../core/toast.service';
         <form class="tooltip dialog" (click)="$event.stopPropagation()" (ngSubmit)="send()">
           <h2>Partager sur Discord</h2>
           <p class="muted small">
-            Le bot poste cette carte en image, telle qu'elle est à l'écran, dans le salon choisi,
-            avec les joueurs de la carte mentionnés.
+            @if (textOnly()) {
+              Le bot poste un message de remerciement dans le salon choisi : chaque participant y est
+              mentionné avec ce qu'il a déposé.
+            } @else {
+              Le bot poste cette carte en image, telle qu'elle est à l'écran, dans le salon choisi,
+              avec les joueurs de la carte mentionnés.
+            }
           </p>
           @if (channels(); as list) {
             <label class="field">
@@ -66,6 +71,8 @@ export class ShareButtonComponent {
   private session = inject(SessionService);
   private host = inject(ElementRef<HTMLElement>);
   readonly card = input.required<string>();
+  // a text message from the bot (thanks:<key>): no picture captured
+  readonly textOnly = input(false);
   readonly capturing = signal(false);
 
   readonly admin = computed(() => Boolean(this.session.me()?.admin));
@@ -145,9 +152,9 @@ export class ShareButtonComponent {
   async send() {
     this.sending.set(true);
     try {
-      const image = await this.capture();
+      const image = this.textOnly() ? null : await this.capture();
       await this.api.share(this.card(), this.channelId, this.text, image);
-      this.toast.ok('📤 Carte partagée sur Discord');
+      this.toast.ok(this.textOnly() ? '📤 Message posté sur Discord' : '📤 Carte partagée sur Discord');
       this.text = '';
       this.open.set(false);
     } catch (err) {

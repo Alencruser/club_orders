@@ -5,12 +5,13 @@ import { ApiService, errorText } from '../core/api.service';
 import { AdminBank } from '../core/models';
 import { ToastService } from '../core/toast.service';
 import { MoneyComponent } from '../shared/guild-ui';
+import { ShareButtonComponent } from '../shared/share-button';
 
 // 🏦 Banque tab of /admin (pages/admin.ts): the goal of the bank bar (a new goal gets new chests, the old
 // one goes to the history) and the « Jamais donné » list (time window, members left out by hand).
 @Component({
   selector: 'app-admin-bank',
-  imports: [DatePipe, FormsModule, MoneyComponent],
+  imports: [DatePipe, FormsModule, MoneyComponent, ShareButtonComponent],
   // only loaded with /admin (lazy chunk), not in the global stylesheet
   styles: `
 // 🏦 Banque tab (pages/admin-bank.ts): members left out of « Jamais donné »
@@ -32,6 +33,13 @@ import { MoneyComponent } from '../shared/guild-ui';
     cursor: pointer;
     overflow-wrap: anywhere;
   }
+}
+.admin-reached {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 .admin-days {
   width: 4.5rem;
@@ -82,6 +90,29 @@ import { MoneyComponent } from '../shared/guild-ui';
             s'ouvrent. Ceux que la banque atteint déjà s'ouvrent sans annonce. L'ancien objectif part
             dans l'historique.
           </p>
+          @if (b.reached?.length) {
+            <h4>🎉 Objectifs réalisés</h4>
+            <ul class="admin-list">
+              @for (r of b.reached; track r.key) {
+                <li class="admin-reached">
+                  <span>
+                    <b>{{ r.name }}</b> · <app-money [copper]="r.copper" />
+                    <span class="muted small">
+                      · atteint le {{ r.reachedAt * 1000 | date: 'd MMM y' }} · {{ r.donors }}
+                      participant{{ r.donors > 1 ? 's' : '' }}
+                    </span>
+                  </span>
+                  @if (r.donors) {
+                    <app-share [card]="'thanks:' + r.key" [textOnly]="true" />
+                  }
+                </li>
+              }
+            </ul>
+            <p class="muted small">
+              « Partager » : le bot remercie dans le salon choisi tous ceux qui ont déposé entre le début de
+              l'objectif et le jour où il a été atteint, chacun mentionné avec son montant.
+            </p>
+          }
           @if (b.history.length) {
             <h4>Objectifs précédents</h4>
             <ul class="admin-list">
