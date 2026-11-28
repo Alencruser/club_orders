@@ -2,14 +2,14 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService, errorText } from '../core/api.service';
-import { AdminScore, AdminScoreMember, ScoreWeights } from '../core/models';
+import { AdminScore, AdminScoreMember, ScoreRolesSync, ScoreWeights } from '../core/models';
 import { ToastService } from '../core/toast.service';
 
 // One weight of the score: the bot's key, its label, and how it is stored (tenths, percent, points)
 interface WeightField {
   key: keyof ScoreWeights;
   label: string;
-  unit: 'tenth' | 'pct' | 'pts';
+  unit: 'tenth' | 'pct' | 'pts' | 'min' | 'n';
 }
 const WEIGHT_GROUPS: { title: string; hint: string; fields: WeightField[] }[] = [
   {
@@ -21,6 +21,8 @@ const WEIGHT_GROUPS: { title: string; hint: string; fields: WeightField[] }[] = 
       { key: 'qGreen', label: 'Vert', unit: 'tenth' },
       { key: 'qBlue', label: 'Bleu', unit: 'tenth' },
       { key: 'qEpic', label: 'Violet et +', unit: 'tenth' },
+      { key: 'itemsCapPct', label: 'Plafond', unit: 'pct' },
+      { key: 'itemsFloor', label: 'Plancher', unit: 'pts' },
     ],
   },
   {
@@ -34,7 +36,7 @@ const WEIGHT_GROUPS: { title: string; hint: string; fields: WeightField[] }[] = 
   },
   {
     title: '💰 Or : points par pièce d’or selon le niveau',
-    hint: 'Dépôts moins retraits. Le plafond garde l’or sous cette part du score, plus le plancher.',
+    hint: 'Dépôts moins retraits : peut être négatif.',
     fields: [
       { key: 'b1', label: 'Niv 1-19', unit: 'tenth' },
       { key: 'b20', label: 'Niv 20-39', unit: 'tenth' },
@@ -47,10 +49,26 @@ const WEIGHT_GROUPS: { title: string; hint: string; fields: WeightField[] }[] = 
   {
     title: '🔨 Fabrications',
     hint: 'Par commande reçue par l’acheteur, quelle que soit la quantité.',
-    fields: [{ key: 'craft', label: 'Par commande', unit: 'tenth' }],
+    fields: [
+      { key: 'craft', label: 'Par commande', unit: 'tenth' },
+      { key: 'craftsCapPct', label: 'Plafond', unit: 'pct' },
+      { key: 'craftsFloor', label: 'Plancher', unit: 'pts' },
+    ],
+  },
+  {
+    title: '🧭 Suivi : le suiveur donne ses points au suivi',
+    hint: 'À chaque tranche : base × (1 + n ÷ pas), n = tranches déjà suivies dans les 24 h, au plus le maximum. Le suiveur perd tout, le suivi reçoit au plus le plafond par jour. Sans plancher : un score peut devenir négatif.',
+    fields: [
+      { key: 'followEveryMin', label: 'Tranche (minutes)', unit: 'min' },
+      { key: 'followBase', label: 'Base par tranche', unit: 'tenth' },
+      { key: 'followStep', label: 'Pas (+100 % toutes les n tranches)', unit: 'n' },
+      { key: 'followMaxPct', label: 'Maximum (% de la base)', unit: 'pct' },
+      { key: 'followDailyCap', label: 'Reçu au plus par jour', unit: 'pts' },
+    ],
   },
 ];
-const CATS: Record<string, string> = { items: '🎁', gold: '💰', crafts: '🔨' };
+const CATS: Record<string, string> = { items: '🎁', gold: '💰', crafts: '🔨', follow: '🧭' };
+const CAT_NAMES: Record<string, string> = { items: 'objets', gold: 'or', crafts: 'fabrications' };
 
 // 🏅 Score (test) tab of /admin (pages/admin.ts): the guild help score, admins only, to judge the weights
 // before players see anything. The bot recomputes it from the history at each load (score.js): ranking,
@@ -108,6 +126,28 @@ const CATS: Record<string, string> = { items: '🎁', gold: '💰', crafts: '�
         font-weight: 700;
       }
     }
+    .sc-enable {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      margin: 0.4rem 0;
+      cursor: pointer;
+    }
+    .sc-roles {
+      tbody tr {
+        cursor: default;
+      }
+      th,
+      td {
+        text-align: left !important;
+      }
+      input {
+        width: 6rem;
+      }
+      select {
+        max-width: 100%;
+      }
+    }
     .sc-weights {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
@@ -134,15 +174,16 @@ const CATS: Record<string, string> = { items: '🎁', gold: '💰', crafts: '�
     <section class="tooltip admin-card">
       <h2>🏅 Score d’entraide (test)</h2>
       <p class="muted small">
-        Visible des admins seulement : rien n’est montré aux joueurs ni posté sur Discord. Recalculé à chaque
-        chargement depuis l’historique (dons des demandes, banque, commandes). Les activités ne comptent pas.
+        Visible des admins seulement : rien n’est montré aux joueurs (hors rôles Discord, s’ils sont actifs).
+        Recalculé à chaque chargement depuis l’historique (dons des demandes, banque, commandes, suivi). Les
+        activités ne comptent pas. Un score négatif (en rouge) : à voir pour les droits en jeu.
         Garde-fous : rien entre les persos d’un même compte, un don « Pas reçu » vaut 0, un perso relié à
         personne ne compte pas.
       </p>
       <div class="sc-head">
         <div class="tabs">
-          <button type="button" [class.active]="period() === 'month'" (click)="setPeriod('month')">Mois en cours</button>
           <button type="button" [class.active]="period() === 'all'" (click)="setPeriod('all')">Depuis toujours</button>
+          <button type="button" [class.active]="period() === 'month'" (click)="setPeriod('month')">Mois en cours</button>
         </div>
         <button type="button" class="btn ghost" [disabled]="busy()" (click)="load()">🔄 Recalculer</button>
       </div>
@@ -153,10 +194,12 @@ const CATS: Record<string, string> = { items: '🎁', gold: '💰', crafts: '�
               <tr>
                 <th>#</th>
                 <th>Membre</th>
-                <th title="Objets donnés">🎁</th>
+                <th title="Objets donnés, après plafond">🎁</th>
                 <th title="Or à la banque, après plafond">💰</th>
-                <th title="Fabrications reçues">🔨</th>
+                <th title="Fabrications reçues, après plafond">🔨</th>
+                <th title="Suivi : reçu moins donné">🧭</th>
                 <th>Total</th>
+                <th title="Rôle Discord, d’après le score depuis toujours">Rôle</th>
               </tr>
             </thead>
             <tbody>
@@ -164,16 +207,16 @@ const CATS: Record<string, string> = { items: '🎁', gold: '💰', crafts: '�
                 <tr [class.open]="open() === m.userId" (click)="toggle(m)">
                   <td>{{ i + 1 }}</td>
                   <td>{{ m.name }}</td>
-                  <td>{{ n(m.items) }}</td>
-                  <td [title]="m.capped ? 'Plafonné : ' + n(m.goldRaw) + ' avant plafond' : ''">
-                    {{ n(m.gold) }}{{ m.capped ? ' ⛔' : '' }}
-                  </td>
-                  <td>{{ n(m.crafts) }}</td>
-                  <td><b>{{ n(m.total) }}</b></td>
+                  <td [title]="capTitle(m, 'items')">{{ n(m.items) }}{{ m.capped.includes('items') ? ' ⛔' : '' }}</td>
+                  <td [title]="capTitle(m, 'gold')">{{ n(m.gold) }}{{ m.capped.includes('gold') ? ' ⛔' : '' }}</td>
+                  <td [title]="capTitle(m, 'crafts')">{{ n(m.crafts) }}{{ m.capped.includes('crafts') ? ' ⛔' : '' }}</td>
+                  <td>{{ n(m.follow) }}</td>
+                  <td [class.refused]="m.total < 0"><b>{{ n(m.total) }}</b></td>
+                  <td class="small">{{ m.role ?? '—' }}</td>
                 </tr>
                 @if (open() === m.userId) {
                   <tr>
-                    <td colspan="6" style="text-align: left">
+                    <td colspan="8" style="text-align: left">
                       <ul class="sc-lines small">
                         @for (l of m.lines; track $index) {
                           <li>
@@ -218,6 +261,52 @@ const CATS: Record<string, string> = { items: '🎁', gold: '💰', crafts: '�
     </section>
 
     @if (data(); as d) {
+      @if (rolesDraft(); as r) {
+        <section class="tooltip admin-card">
+          <h2>🎭 Rôles Discord</h2>
+          <p class="muted small">
+            Pour le fun, sans aucune permission : chaque membre reçoit le rôle du plus haut palier atteint par son
+            score depuis toujours, et perd les autres. Reposés chaque jour, après chaque enregistrement et avec
+            « Reposer maintenant ». Crée les rôles dans Discord (nom, couleur), puis choisis-les ici. Le bot a besoin
+            de « Gérer les rôles », et son propre rôle doit être au-dessus de ceux-ci.
+          </p>
+          <label class="sc-enable">
+            <input type="checkbox" [checked]="r.enabled" (change)="setRolesEnabled($any($event.target).checked)" />
+            Rôles actifs (décoché : le bot retire ceux qu’il a posés)
+          </label>
+          <table class="sc-table sc-roles">
+            <thead>
+              <tr>
+                <th>Palier</th>
+                <th>Dès (points)</th>
+                <th>Rôle Discord</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of r.tiers; track t.key) {
+                <tr>
+                  <td>{{ t.name }}</td>
+                  <td><input type="number" step="1" [ngModel]="t.min" (ngModelChange)="editTier(t.key, 'min', $event)" /></td>
+                  <td>
+                    <select [ngModel]="t.roleId ?? ''" (ngModelChange)="editTier(t.key, 'roleId', $event)">
+                      <option value="">— aucun —</option>
+                      @for (g of d.roles.guildRoles; track g.id) {
+                        <option [value]="g.id" [disabled]="!g.editable">
+                          {{ g.name }}{{ g.editable ? '' : ' (au-dessus du bot)' }}{{ g.dangerous ? ' ⚠️ a des permissions' : '' }}
+                        </option>
+                      }
+                    </select>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <div class="admin-actions">
+            <button type="button" class="btn gold" [disabled]="busy()" (click)="saveRoles()">💾 Enregistrer les rôles</button>
+            <button type="button" class="btn ghost" [disabled]="busy() || !d.roles.enabled" (click)="syncRoles()">🔄 Reposer maintenant</button>
+          </div>
+        </section>
+      }
       <section class="tooltip admin-card">
         <h2>⚙️ Pondération</h2>
         <p class="muted small">Change une valeur, enregistre : le classement se recalcule. « Défaut » remet la valeur d’origine.</p>
@@ -234,7 +323,7 @@ const CATS: Record<string, string> = { items: '🎁', gold: '💰', crafts: '�
                   </span>
                   <span>
                     <input type="number" min="0" [step]="f.unit === 'tenth' ? 0.1 : 1" [ngModel]="draft()[f.key]" (ngModelChange)="edit(f.key, $event)" />
-                    {{ f.unit === 'pct' ? '%' : f.unit === 'pts' ? 'pts' : '' }}
+                    {{ f.unit === 'pct' ? '%' : f.unit === 'pts' ? 'pts' : f.unit === 'min' ? 'min' : '' }}
                   </span>
                 </label>
               }
@@ -257,7 +346,9 @@ export class AdminScoreComponent {
   readonly data = signal<AdminScore | null>(null);
   readonly error = signal<string | null>(null);
   readonly busy = signal(false);
-  readonly period = signal<'month' | 'all'>('month');
+  readonly period = signal<'month' | 'all'>('all');
+  // Discord roles of the tiers, as edited (saved with « Enregistrer les rôles »)
+  readonly rolesDraft = signal<{ enabled: boolean; tiers: { key: string; name: string; min: number; roleId: string | null }[] } | null>(null);
   readonly open = signal<string | null>(null);
   // the weights as shown (tenths as decimals), keyed like the bot's
   readonly draft = signal<Record<string, number>>({});
@@ -279,6 +370,7 @@ export class AdminScoreComponent {
       const d = await this.api.adminScore(this.period());
       this.data.set(d);
       this.draft.set(Object.fromEntries(this.fields.map((f) => [f.key, this.shown(f, d.weights[f.key])])));
+      this.rolesDraft.set({ enabled: d.roles.enabled, tiers: d.roles.tiers.map((t) => ({ ...t })) });
       this.error.set(null);
     } catch (err) {
       this.error.set(errorText(err));
@@ -327,6 +419,47 @@ export class AdminScoreComponent {
   reset() {
     const d = this.data();
     if (d) this.save({ ...d.defaults });
+  }
+
+  capTitle(m: AdminScoreMember, c: 'items' | 'gold' | 'crafts') {
+    const raw = c === 'items' ? m.itemsRaw : c === 'gold' ? m.goldRaw : m.craftsRaw;
+    return m.capped.includes(c) ? `Plafonné : ${this.n(raw)} avant le plafond des ${CAT_NAMES[c]}` : '';
+  }
+
+  editTier(key: string, field: 'min' | 'roleId', value: number | string | null) {
+    this.rolesDraft.update(
+      (r) =>
+        r && {
+          ...r,
+          tiers: r.tiers.map((t) => (t.key === key ? { ...t, [field]: field === 'min' ? Math.round(Number(value)) : value || null } : t)),
+        },
+    );
+  }
+  setRolesEnabled(enabled: boolean) {
+    this.rolesDraft.update((r) => r && { ...r, enabled });
+  }
+
+  async saveRoles() {
+    const r = this.rolesDraft();
+    if (!r) return;
+    const tiers = r.tiers.map(({ key, min, roleId }) => ({ key, min, roleId }));
+    await this.rolesCall(() => this.api.adminScoreRoles({ enabled: r.enabled, tiers }), '💾 Rôles enregistrés');
+  }
+  async syncRoles() {
+    await this.rolesCall(() => this.api.adminScoreRolesSync(), '🔄 Rôles reposés');
+  }
+  private async rolesCall(call: () => Promise<{ sync: ScoreRolesSync }>, done: string) {
+    this.busy.set(true);
+    try {
+      const { sync } = await call();
+      this.toast.ok(`${done} : ${sync.added} posé(s), ${sync.removed} retiré(s).`);
+      if (sync.errors.length) this.toast.error(`❌ ${sync.errors.length} erreur(s), dont ${sync.errors[0]}`);
+    } catch (err) {
+      this.toast.error(`❌ ${errorText(err)}`);
+    } finally {
+      this.busy.set(false);
+    }
+    await this.load();
   }
 
   n(v: number) {

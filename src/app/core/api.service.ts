@@ -12,6 +12,7 @@ import {
   AdminFollow,
   AdminScore,
   ScoreWeights,
+  ScoreRolesSync,
   AdminLogEntry,
   AdminSettings,
   AdminSettingsValues,
@@ -237,6 +238,13 @@ export class ApiService {
   }
   adminScoreWeights(values: Record<string, number>) {
     return this.post<{ weights: ScoreWeights }>('/api/admin/score/weights', { values });
+  }
+  // 🏅 Score: Discord roles of the tiers, set right away by the bot
+  adminScoreRoles(body: { enabled?: boolean; tiers?: { key: string; min: number; roleId: string | null }[] }) {
+    return this.post<{ sync: ScoreRolesSync }>('/api/admin/score/roles', body);
+  }
+  adminScoreRolesSync() {
+    return this.post<{ sync: ScoreRolesSync }>('/api/admin/score/roles/sync', {});
   }
 
   // 🚶 Suivi tab: a session is ignored (counted nowhere) or deleted, its time never changes

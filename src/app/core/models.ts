@@ -261,14 +261,23 @@ export interface ScoreWeights {
   b20: number;
   b40: number;
   b50: number;
+  itemsCapPct: number;
+  itemsFloor: number;
   goldCapPct: number;
   goldFloor: number;
+  craftsCapPct: number;
+  craftsFloor: number;
   autoPct: number;
   craft: number;
+  followEveryMin: number;
+  followBase: number;
+  followStep: number;
+  followMaxPct: number;
+  followDailyCap: number;
 }
 export interface AdminScoreLine {
   at: number; // ms
-  cat: 'items' | 'gold' | 'crafts';
+  cat: 'items' | 'gold' | 'crafts' | 'follow';
   points: number;
   text: string;
   calc: string;
@@ -276,13 +285,33 @@ export interface AdminScoreLine {
 export interface AdminScoreMember {
   userId: string;
   name: string;
-  gold: number; // after the cap
+  gold: number; // after the cap (can be negative)
   goldRaw: number;
-  capped: boolean;
-  items: number;
-  crafts: number;
+  items: number; // after the cap
+  itemsRaw: number;
+  crafts: number; // after the cap
+  craftsRaw: number;
+  follow: number; // received − given, no cap
+  capped: ('items' | 'gold' | 'crafts')[];
   total: number;
+  role: string | null; // tier reached by the all-time score (Discord role)
   lines: AdminScoreLine[];
+}
+export interface ScoreRoleTier {
+  key: string;
+  name: string;
+  min: number;
+  roleId: string | null;
+}
+export interface ScoreRolesSync {
+  added: number;
+  removed: number;
+  errors: string[];
+}
+export interface ScoreRoles {
+  enabled: boolean;
+  tiers: ScoreRoleTier[];
+  guildRoles: { id: string; name: string; color: string; editable: boolean; dangerous: boolean }[];
 }
 export interface AdminScore {
   period: 'month' | 'all';
@@ -291,6 +320,7 @@ export interface AdminScore {
   defaults: ScoreWeights;
   members: AdminScoreMember[];
   excluded: { at: number; text: string; reason: string }[];
+  roles: ScoreRoles;
 }
 // 📜 Journal des actions (État tab): one admin action
 export interface AdminLogEntry {
