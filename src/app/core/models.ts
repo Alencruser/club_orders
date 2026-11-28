@@ -124,6 +124,8 @@ export interface PatternSources {
     s?: [number, number];
   } | null;
   fdbNpcs: Record<string, [string, number | null, number | null, string | null, boolean] | null>; // name, x, y, side A/H, seen in Forever
+  // ForeverDB.net: monsters the item was seen dropping from in Forever [npc (null: name only), English name, %, corpses looted]
+  fdbMobs?: [number | null, string, number | null, number | null][] | null;
 }
 
 export interface Tooltip {

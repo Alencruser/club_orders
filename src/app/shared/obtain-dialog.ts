@@ -47,6 +47,7 @@ interface Mob {
   rate: number | null;
   zone: string | null;
   npc: NpcInfo | null;
+  forever?: boolean; // ForeverDB: seen dropping it in Forever
 }
 
 // « 📍 Obtention » of a recipe (recipe card): the pattern, the trainers, vendors and quests (zone, position,
@@ -117,6 +118,12 @@ interface Mob {
     }
     .ob-elite {
       color: #f8b84e;
+    }
+    .ob-seen {
+      margin-left: 0.4rem;
+      font-size: 0.75rem;
+      color: #1eff00;
+      white-space: nowrap;
     }
     .ob-side {
       font-size: 0.75rem;
@@ -317,6 +324,9 @@ interface Mob {
                       @if (m.npc && kindText(m.npc); as k) {
                         <span class="ob-kind" [class.ob-elite]="m.npc.kind"> ({{ k }})</span>
                       }
+                      @if (m.forever) {
+                        <span class="ob-seen" title="ForeverDB.net : des joueurs l’ont vu tomber sur ce monstre dans Forever">✔ vu dans Forever</span>
+                      }
                     </td>
                     <td>{{ m.npc ? (m.npc.zone ?? m.zone ?? '—') : (m.zone ?? (m.id ? '…' : '—')) }}</td>
                     <td class="rate">{{ m.rate === null ? '—' : rate(m.rate) }}</td>
@@ -426,6 +436,14 @@ export class ObtainDialogComponent implements OnDestroy {
     for (const m of this.whNpcs())
       if (m.kind === 'drop' && !list.some((x) => x.id === String(m.npc)))
         list.push({ id: String(m.npc), name: m.name, rate: null, zone: m.zone, npc: this.npcOf(all, m.npc) });
+    // ForeverDB: monsters seen dropping it in Forever (marked; those already listed only get the mark and the rate)
+    for (const [npc, name, rate] of this.sources()?.fdbMobs ?? []) {
+      const same = list.find((x) => (npc ? x.id === String(npc) : (x.npc?.name ?? x.name ?? '').toLowerCase() === name.toLowerCase()));
+      if (same) {
+        same.forever = true;
+        same.rate ??= rate;
+      } else list.push({ id: npc ? String(npc) : null, name, rate, zone: null, npc: npc ? this.npcOf(all, npc) : null, forever: true });
+    }
     const d = this.fdb()?.d;
     if (!list.length && d) list.push({ id: null, name: d[0], rate: d[1], zone: null, npc: null });
     return list;
@@ -530,6 +548,7 @@ export class ObtainDialogComponent implements OnDestroy {
           ...(id ? (c?.limited[id] ?? []) : []).map(([npc]) => npc),
           ...this.whNpcs().map((m) => m.npc),
           ...(this.fdb()?.v ?? []).map(([npc]) => npc),
+          ...(this.sources()?.fdbMobs ?? []).map(([npc]) => npc).filter((npc): npc is number => npc !== null),
           ...((set && c?.trainerSets?.[set]) || []),
         ].map(String),
       ),
