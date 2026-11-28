@@ -261,6 +261,7 @@ export interface ScoreWeights {
   b20: number;
   b40: number;
   b50: number;
+  itemValuePct: number;
   itemsCapPct: number;
   itemsFloor: number;
   goldCapPct: number;

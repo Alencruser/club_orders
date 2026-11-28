@@ -36,12 +36,13 @@ const WEIGHT_GROUPS: { title: string; hint: string; fields: WeightField[] }[] = 
   },
   {
     title: '💰 Or : points par pièce d’or selon le niveau',
-    hint: 'Dépôts moins retraits : peut être négatif.',
+    hint: 'Dépôts moins retraits, peut être négatif. Les objets déposés (+) ou retirés (−) de la banque comptent pour une part de leur prix Auctionator le plus récent.',
     fields: [
       { key: 'b1', label: 'Niv 1-19', unit: 'tenth' },
       { key: 'b20', label: 'Niv 20-39', unit: 'tenth' },
       { key: 'b40', label: 'Niv 40-49', unit: 'tenth' },
       { key: 'b50', label: 'Niv 50+', unit: 'tenth' },
+      { key: 'itemValuePct', label: 'Objets de la banque (% du prix HV)', unit: 'pct' },
       { key: 'goldCapPct', label: 'Plafond', unit: 'pct' },
       { key: 'goldFloor', label: 'Plancher', unit: 'pts' },
     ],
